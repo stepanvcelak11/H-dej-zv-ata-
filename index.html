@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="cs">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Hádej zvířata</title>
+<meta name="description" content="Hra na hádání zvířat a slavných míst z přiblížených, rozmazaných nebo rozpixelovaných fotek.">
+<meta name="theme-color" content="#1f4d3a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png" type="image/png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Hádej">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ============ DOMŮ ============ -->
+  <section class="screen active" id="home">
+    <div class="home-hero">
+      <div class="logo" aria-hidden="true"><img src="icons/icon-192.png" alt=""></div>
+      <h1>Hádej zvířata</h1>
+      <p class="tagline">a slavná místa světa</p>
+    </div>
+    <div class="home-actions">
+      <button class="btn primary big" id="btnQuick">▶ Hrát</button>
+      <div class="quick-summary" id="quickSummary"></div>
+      <button class="btn big" data-go="setup">⚙️ Nastavit hru</button>
+      <button class="btn big daily" id="btnDaily">📅 Denní výzva <span id="dailyBadge" class="badge"></span></button>
+      <div class="row2">
+        <button class="btn" data-go="collection">🦁 Sbírka</button>
+        <button class="btn" data-go="stats">📊 Statistiky</button>
+      </div>
+      <button class="btn ghost small" data-go="about">ℹ️ Jak hrát · autoři fotek</button>
+    </div>
+    <div class="status-bar">
+      <span id="netStatus" class="pill"></span>
+      <span id="offlineStatus" class="pill"></span>
+    </div>
+    <button class="install-btn hidden" id="btnInstall">📲 Přidat na plochu</button>
+  </section>
+
+  <!-- ============ NASTAVENÍ ============ -->
+  <section class="screen" id="setup">
+    <header class="topbar">
+      <button class="icon-btn" data-go="home" aria-label="Zpět">‹</button>
+      <h2>Nastavení hry</h2>
+      <span></span>
+    </header>
+    <div class="scroll">
+      <div class="preview-wrap">
+        <canvas id="previewCanvas" width="480" height="480"></canvas>
+        <div class="preview-label">Náhled: takhle bude vypadat obrázek</div>
+      </div>
+
+      <div class="field">
+        <label>Téma</label>
+        <div class="seg" id="optTheme">
+          <button data-v="animals">🐾 Zvířata</button>
+          <button data-v="landmarks">🗺️ Místa</button>
+          <button data-v="both">🌍 Obojí</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Režim obrázku</label>
+        <div class="modes" id="optMode"></div>
+        <p class="hint-text" id="modeDesc"></p>
+      </div>
+
+      <div class="field">
+        <label>Obtížnost</label>
+        <div class="seg" id="optDiff"></div>
+        <p class="hint-text" id="diffDesc"></p>
+      </div>
+
+      <div class="field" id="fieldPrecise">
+        <label>Jak přesně odpovídat</label>
+        <div class="seg" id="optPrecise">
+          <button data-v="0">🐦 Stačí zvíře</button>
+          <button data-v="1">🔬 I s druhem</button>
+        </div>
+        <p class="hint-text" id="preciseDesc"></p>
+      </div>
+
+      <div class="field" id="fieldGroups">
+        <label>Skupiny zvířat</label>
+        <div class="chips" id="optGroups"></div>
+      </div>
+
+      <div class="field" id="fieldContinents">
+        <label>Kontinenty (místa)</label>
+        <div class="chips" id="optContinents"></div>
+      </div>
+
+      <div class="field">
+        <label>Hráči</label>
+        <div class="seg" id="optPlayers">
+          <button data-v="1">👤 Sám</button>
+          <button data-v="2">👥 Ve dvou</button>
+        </div>
+        <div class="names" id="playerNames">
+          <input id="p1name" maxlength="16" placeholder="Hráč 1" autocomplete="off">
+          <input id="p2name" maxlength="16" placeholder="Hráč 2" autocomplete="off">
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Počet kol <span class="sub" id="roundsSub"></span></label>
+        <div class="seg" id="optRounds">
+          <button data-v="5">5</button>
+          <button data-v="10">10</button>
+          <button data-v="20">20</button>
+          <button data-v="0">∞</button>
+        </div>
+      </div>
+
+      <div class="field toggles">
+        <label class="toggle"><input type="checkbox" id="optOnline"><span>🌐 Hledat i zvířata a místa z internetu <small>(když je připojení)</small></span></label>
+        <label class="toggle"><input type="checkbox" id="optEase"><span>🔓 Po každé chybě obrázek trochu zlehčit</span></label>
+        <label class="toggle"><input type="checkbox" id="optTimer"><span>⏱️ Časový limit 60 s na kolo</span></label>
+      </div>
+    </div>
+    <div class="bottom-bar">
+      <button class="btn primary big" id="btnStart">▶ Začít hru</button>
+    </div>
+  </section>
+
+  <!-- ============ HRA ============ -->
+  <section class="screen" id="game">
+    <header class="topbar game-top">
+      <button class="icon-btn" id="btnQuit" aria-label="Ukončit">✕</button>
+      <div class="game-info">
+        <div class="round" id="roundInfo"></div>
+        <div class="player" id="playerInfo"></div>
+      </div>
+      <div class="score" id="scoreInfo">0</div>
+    </header>
+
+    <div class="game-body">
+      <div class="canvas-wrap" id="canvasWrap">
+        <canvas id="gameCanvas" width="900" height="900"></canvas>
+        <div class="loading hidden" id="loading"><div class="spinner"></div><span>Hledám obrázek…</span></div>
+        <div class="mode-tag" id="modeTag"></div>
+        <div class="timer hidden" id="timer"></div>
+        <div class="source-tag hidden" id="sourceTag">🌐</div>
+      </div>
+
+      <div class="attempts" id="attempts"></div>
+      <div class="feedback" id="feedback" role="status" aria-live="polite"></div>
+      <ul class="hints" id="hintList"></ul>
+
+      <form class="guess-form" id="guessForm" autocomplete="off">
+        <input id="guessInput" type="text" placeholder="Co to je?" autocomplete="off" autocorrect="off" autocapitalize="none" spellcheck="false" enterkeyhint="send">
+        <button class="btn primary" type="submit">Hádat</button>
+      </form>
+      <div class="game-actions">
+        <button class="btn" id="btnHint">💡 Nápověda <small id="hintCost"></small></button>
+        <button class="btn ghost" id="btnGiveUp">🏳️ Nevím</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SBÍRKA ============ -->
+  <section class="screen" id="collection">
+    <header class="topbar">
+      <button class="icon-btn" data-go="home" aria-label="Zpět">‹</button>
+      <h2>Moje sbírka</h2>
+      <span></span>
+    </header>
+    <div class="seg tabs" id="colTabs">
+      <button data-v="animals" class="on">🐾 Zvířata</button>
+      <button data-v="landmarks">🗺️ Místa</button>
+      <button data-v="online">🌐 Z internetu</button>
+    </div>
+    <div class="col-progress" id="colProgress"></div>
+    <div class="scroll">
+      <div class="col-grid" id="colGrid"></div>
+    </div>
+  </section>
+
+  <!-- ============ STATISTIKY ============ -->
+  <section class="screen" id="stats">
+    <header class="topbar">
+      <button class="icon-btn" data-go="home" aria-label="Zpět">‹</button>
+      <h2>Statistiky</h2>
+      <span></span>
+    </header>
+    <div class="scroll" id="statsBody"></div>
+  </section>
+
+  <!-- ============ O HŘE ============ -->
+  <section class="screen" id="about">
+    <header class="topbar">
+      <button class="icon-btn" data-go="home" aria-label="Zpět">‹</button>
+      <h2>Jak hrát</h2>
+      <span></span>
+    </header>
+    <div class="scroll prose">
+      <h3>Pravidla</h3>
+      <p>Uvidíš obrázek zvířete nebo slavného místa, ale v ztížené podobě: přiblížený, rozmazaný, rozpixelovaný, zakrytý nebo rozstříhaný. Napiš, co to je. Máš <b>3 pokusy</b>.</p>
+      <ul>
+        <li>Diakritika ani malé překlepy nevadí („zirafa“ = „žirafa“).</li>
+        <li>V nastavení si vybereš, jestli stačí poznat zvíře (<i>sojka</i>), nebo musíš znát i druh (<i>sojka obecná</i>). V přísném režimu ti hra za samotné „sojka“ řekne <i>Skoro!</i>, pokus ti nesebere a za celý název dostaneš body ×1,25.</li>
+        <li><b>Nápověda</b> prozradí vždy jen kousek, třeba „Není to savec“ nebo kde zvíře žije. Každá ubere body.</li>
+        <li>Po chybě se obrázek může trochu zlehčit (dá se vypnout v nastavení).</li>
+      </ul>
+      <h3>Body</h3>
+      <p>1. pokus 100 b., 2. pokus 60 b., 3. pokus 35 b. Každá nápověda −15 b. Vyšší obtížnost body násobí (×1, ×1,5, ×2, ×3). V režimu <i>Odkrývání</i> dostaneš bonus za rychlost.</p>
+      <h3>Offline a online</h3>
+      <p>Základních zvířat a míst je v aplikaci uložených pro hru bez internetu. Když zapneš <i>Hledat i z internetu</i> a jsi připojený, hra přidá tisíce dalších zvířat z iNaturalist.org a další místa z Wikipedie.</p>
+      <h3>Přidání na plochu</h3>
+      <p><b>iPhone (Safari):</b> tlačítko Sdílet → „Přidat na plochu“.<br><b>Android (Chrome):</b> menu ⋮ → „Přidat na plochu“ / „Nainstalovat aplikaci“.</p>
+      <h3>Autoři fotek</h3>
+      <p>Fotky zvířat pochází z <a href="https://www.inaturalist.org" target="_blank" rel="noopener">iNaturalist.org</a>, fotky míst z <a href="https://commons.wikimedia.org" target="_blank" rel="noopener">Wikimedia Commons</a>, vše pod licencemi Creative Commons. Fotky se pro hru upravují (ořez, rozmazání a podobně).</p>
+      <div id="creditsList" class="credits"></div>
+      <h3>Data</h3>
+      <p>Postup, sbírka a statistiky se ukládají jen v tomto zařízení.</p>
+      <button class="btn ghost small" id="btnReset">🗑️ Smazat postup a statistiky</button>
+      <p class="version" id="versionInfo"></p>
+    </div>
+  </section>
+
+</div>
+
+<!-- ============ VÝSLEDEK KOLA ============ -->
+<div class="overlay hidden" id="resultOverlay">
+  <div class="sheet result">
+    <div class="result-head" id="resultHead"></div>
+    <canvas id="resultCanvas" width="900" height="900"></canvas>
+    <h2 id="resultName"></h2>
+    <p class="sci" id="resultSci"></p>
+    <p class="points" id="resultPoints"></p>
+    <p class="fact" id="resultFact"></p>
+    <p class="credit" id="resultCredit"></p>
+    <button class="btn primary big" id="btnNext">Další ›</button>
+  </div>
+</div>
+
+<!-- ============ PŘEDÁNÍ TELEFONU ============ -->
+<div class="overlay hidden" id="turnOverlay">
+  <div class="sheet center">
+    <div class="turn-emoji">📱</div>
+    <p>Předej telefon. Na řadě je</p>
+    <h2 id="turnName"></h2>
+    <p class="turn-score" id="turnScore"></p>
+    <button class="btn primary big" id="btnTurnGo">Jdu na to!</button>
+  </div>
+</div>
+
+<!-- ============ KONEC HRY ============ -->
+<div class="overlay hidden" id="endOverlay">
+  <div class="sheet">
+    <h2 id="endTitle">Konec hry</h2>
+    <div id="endScores" class="end-scores"></div>
+    <div id="endShare" class="hidden">
+      <pre id="shareText" class="share-text"></pre>
+      <button class="btn" id="btnShare">📤 Sdílet výsledek</button>
+    </div>
+    <ul id="endList" class="end-list"></ul>
+    <div class="row2">
+      <button class="btn" id="btnEndHome">Domů</button>
+      <button class="btn primary" id="btnAgain">Hrát znovu</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ DETAIL ZE SBÍRKY ============ -->
+<div class="overlay hidden" id="detailOverlay">
+  <div class="sheet result">
+    <img id="detailImg" alt="">
+    <h2 id="detailName"></h2>
+    <p class="sci" id="detailSci"></p>
+    <p class="fact" id="detailInfo"></p>
+    <p class="credit" id="detailCredit"></p>
+    <button class="btn big" id="btnDetailClose">Zavřít</button>
+  </div>
+</div>
+
+<div class="toast hidden" id="toast"></div>
+
+<script src="data/animals.js"></script>
+<script src="data/landmarks.js"></script>
+<script src="js/distort.js"></script>
+<script src="js/match.js"></script>
+<script src="js/online.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

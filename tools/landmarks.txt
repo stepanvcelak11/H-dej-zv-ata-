@@ -1,0 +1,130 @@
+# cs | synonyma (;) | anglická Wikipedie | země | kontinent | typ (stavba/příroda) | nápověda | online (1 = jen s internetem)
+Eiffelova věž|eiffelovka;eiffel|Eiffel Tower|Francie|Evropa|stavba|Železná věž postavená pro světovou výstavu v roce 1889.
+Socha Svobody|statue of liberty|Statue of Liberty|USA|Severní Amerika|stavba|Dar Francie, který vítá lodě v přístavu.
+Koloseum|colosseum;koloseum v římě|Colosseum|Itálie|Evropa|stavba|Starověký amfiteátr, kde bojovali gladiátoři.
+Šikmá věž v Pise|šikmá věž;pisa;věž v pise|Leaning Tower of Pisa|Itálie|Evropa|stavba|Zvonice, která se naklání.
+Velká čínská zeď|čínská zeď;velká zeď|Great Wall of China|Čína|Asie|stavba|Obranná stavba dlouhá tisíce kilometrů.
+Tádž Mahal|taj mahal;tádž mahál|Taj Mahal|Indie|Asie|stavba|Bílé mramorové mauzoleum postavené z lásky.
+Velká pyramida v Gíze|pyramidy;pyramida;pyramidy v gíze;cheopsova pyramida|Great Pyramid of Giza|Egypt|Afrika|stavba|Jediný dochovaný div starověkého světa.
+Sfinga|velká sfinga;sfinga v gíze|Great Sphinx of Giza|Egypt|Afrika|stavba|Socha s tělem lva a lidskou hlavou.
+Machu Picchu|machu pichu|Machu Picchu|Peru|Jižní Amerika|stavba|Ztracené město Inků vysoko v horách.
+Socha Krista Spasitele|kristus spasitel;kristus vykupitel;cristo redentor|Christ the Redeemer (statue)|Brazílie|Jižní Amerika|stavba|Obří socha s rozpaženýma rukama nad městem.
+Opera v Sydney|sydneyská opera;opera sydney|Sydney Opera House|Austrálie|Austrálie|stavba|Střechy připomínají plachty lodí.
+Big Ben|elizabeth tower|Big Ben|Spojené království|Evropa|stavba|Slavná hodinová věž u parlamentu.
+Tower Bridge|tower bridge|Tower Bridge|Spojené království|Evropa|stavba|Zvedací most přes Temži.
+Stonehenge|stounhendž|Stonehenge|Spojené království|Evropa|stavba|Pravěký kruh z obřích kamenů.
+Akropole|akropolis;parthenón;parthenon|Acropolis of Athens|Řecko|Evropa|stavba|Antický chrám na skalnatém kopci.
+Sagrada Família|sagrada familia|Sagrada Família|Španělsko|Evropa|stavba|Chrám od Gaudího, staví se už přes 100 let.
+Alhambra|alhambra|Alhambra|Španělsko|Evropa|stavba|Maurský palác a pevnost.
+Neuschwanstein|zámek neuschwanstein|Neuschwanstein Castle|Německo|Evropa|stavba|Pohádkový zámek, inspirace pro Disney.
+Braniborská brána|brandenburger tor|Brandenburg Gate|Německo|Evropa|stavba|Klasicistní brána, symbol sjednocení země.
+Kolínská katedrála|kolínský dóm|Cologne Cathedral|Německo|Evropa|stavba|Obrovská gotická katedrála se dvěma věžemi.
+Karlův most|karlův most|Charles Bridge|Česko|Evropa|stavba|Kamenný most se sochami světců.
+Pražský hrad|hrad;hradčany|Prague Castle|Česko|Evropa|stavba|Největší hradní komplex na světě.
+Orloj|pražský orloj;staroměstský orloj|Prague astronomical clock|Česko|Evropa|stavba|Středověké astronomické hodiny s apoštoly.
+Hrad Karlštejn|karlštejn|Karlštejn|Česko|Evropa|stavba|Hrad postavený pro korunovační klenoty.
+Kostnice v Sedlci|kostnice;sedlec|Sedlec Ossuary|Česko|Evropa|stavba|Kaple vyzdobená lidskými kostmi.
+Pravčická brána|pravčická brána|Pravčická brána|Česko|Evropa|příroda|Největší přírodní skalní brána v Evropě.
+Chrám svatého Víta|katedrála svatého víta;svatý vít|St. Vitus Cathedral|Česko|Evropa|stavba|Gotická katedrála uvnitř hradu.
+Petronas Towers|petronas|Petronas Towers|Malajsie|Asie|stavba|Dvojčata mrakodrapů spojená mostem.
+Burdž Chalífa|burj khalifa;burdž chalífa|Burj Khalifa|Spojené arabské emiráty|Asie|stavba|Nejvyšší budova na světě.
+Angkor Vat|angkor wat;angkor|Angkor Wat|Kambodža|Asie|stavba|Obrovský chrámový komplex v džungli.
+Zakázané město|forbidden city|Forbidden City|Čína|Asie|stavba|Císařský palác v Pekingu.
+Petra|petra|Petra|Jordánsko|Asie|stavba|Město vytesané do růžové skály.
+Chrám Kinkakuji|zlatý pavilon;kinkakudži|Kinkaku-ji|Japonsko|Asie|stavba|Pavilon pokrytý zlatem u jezírka.
+Hora Fudži|fudži;fuji;fudžijama|Mount Fuji|Japonsko|Asie|příroda|Posvátná sopka se sněhovou čepicí.
+Mount Everest|everest;čomolungma|Mount Everest|Nepál a Čína|Asie|příroda|Nejvyšší hora světa.
+Grand Canyon|velký kaňon;grand kaňon|Grand Canyon|USA|Severní Amerika|příroda|Obří kaňon vyhloubený řekou Colorado.
+Niagarské vodopády|niagara|Niagara Falls|USA a Kanada|Severní Amerika|příroda|Slavné vodopády na hranici dvou zemí.
+Golden Gate Bridge|golden gate;most golden gate|Golden Gate Bridge|USA|Severní Amerika|stavba|Červený visutý most v San Franciscu.
+Mount Rushmore|rushmore|Mount Rushmore|USA|Severní Amerika|stavba|Tváře čtyř prezidentů vytesané do skály.
+Bílý dům|white house|White House|USA|Severní Amerika|stavba|Sídlo amerického prezidenta.
+Empire State Building|empire state|Empire State Building|USA|Severní Amerika|stavba|Slavný mrakodrap v New Yorku.
+Chichén Itzá|chichen itza;čičen ica|Chichen Itza|Mexiko|Severní Amerika|stavba|Mayská stupňovitá pyramida.
+Iguaçu|vodopády iguaçu;iguazu|Iguazu Falls|Argentina a Brazílie|Jižní Amerika|příroda|Soustava stovek vodopádů v pralese.
+Velikonoční ostrov|sochy moai;moai|Moai|Chile|Jižní Amerika|stavba|Obří kamenné hlavy na ostrově v Pacifiku.
+Uluru|ayers rock|Uluru|Austrálie|Austrálie|příroda|Obří červená skála uprostřed pouště.
+Velký bariérový útes|bariérový útes;great barrier reef|Great Barrier Reef|Austrálie|Austrálie|příroda|Největší korálový útes na světě.
+Matterhorn|matterhorn|Matterhorn|Švýcarsko a Itálie|Evropa|příroda|Hora tvaru pyramidy, kterou znáš z čokolády.
+Benátky|benátky|Grand Canal (Venice)|Itálie|Evropa|stavba|Město na vodě s gondolami.
+Mont-Saint-Michel|mont saint michel|Mont-Saint-Michel|Francie|Evropa|stavba|Klášter na ostrůvku, který při přílivu obklopí moře.
+Vítězný oblouk|arc de triomphe|Arc de Triomphe|Francie|Evropa|stavba|Oblouk na konci slavné pařížské třídy.
+Louvre|louvre;pyramida louvre|Louvre Pyramid|Francie|Evropa|stavba|Skleněná pyramida před muzeem s Monou Lisou.
+Notre-Dame|notre dame|Notre-Dame de Paris|Francie|Evropa|stavba|Gotická katedrála na ostrově v Seině.
+Chrám Vasila Blaženého|vasil blažený;chrám vasila blaženého|Saint Basil's Cathedral|Rusko|Evropa|stavba|Chrám s pestrobarevnými cibulovitými kopulemi.
+Hagia Sofia|hagia sofia;aja sofia|Hagia Sophia|Turecko|Evropa a Asie|stavba|Byzantský chrám, později mešita.
+Kappadokie|kapadokie;cappadocia|Cappadocia|Turecko|Asie|příroda|Skalní komíny a balóny při východu slunce.
+Santorini|santorini;théra|Santorini|Řecko|Evropa|příroda|Bílé domky s modrými kopulemi nad mořem.
+Atomium|atomium|Atomium|Belgie|Evropa|stavba|Obří model krystalu železa.
+Větrné mlýny Kinderdijk|kinderdijk;větrné mlýny|Kinderdijk|Nizozemsko|Evropa|stavba|Řada historických větrných mlýnů u kanálu.
+Fjordy|fjord;geirangerfjord|Geirangerfjord|Norsko|Evropa|příroda|Úzký mořský záliv mezi strmými horami.
+Islandský gejzír|strokkur;gejzír;geysir|Strokkur|Island|Evropa|příroda|Každých pár minut vystříkne horkou vodu.
+Viktoriiny vodopády|victoria falls;viktoriiny vodopády|Victoria Falls|Zambie a Zimbabwe|Afrika|příroda|Domorodci jim říkají „dým, který hřmí“.
+Kilimandžáro|kilimanjaro|Mount Kilimanjaro|Tanzanie|Afrika|příroda|Nejvyšší hora Afriky.
+Stolová hora|table mountain|Table Mountain|Jihoafrická republika|Afrika|příroda|Hora s plochým vrcholem nad Kapským Městem.
+Mešita šejcha Zájida|mešita šejka zayeda|Sheikh Zayed Grand Mosque|Spojené arabské emiráty|Asie|stavba|Obrovská bílá mešita s mnoha kopulemi.
+Zlatý chrám|harmandir sahib;zlatý chrám|Golden Temple|Indie|Asie|stavba|Pozlacený svatostánek sikhů uprostřed jezírka.
+Šibuja|křižovatka šibuja;shibuya|Shibuya Crossing|Japonsko|Asie|stavba|Nejrušnější přechod pro chodce na světě.
+Marina Bay Sands|marina bay|Marina Bay Sands|Singapur|Asie|stavba|Tři mrakodrapy spojené na střeše „lodí“.
+Halong|zátoka ha long;ha long|Hạ Long Bay|Vietnam|Asie|příroda|Tisíce vápencových ostrůvků v moři.
+Pamukkale|pamukkale|Pamukkale|Turecko|Asie|příroda|Bílé vápencové terasy s jezírky.
+Mrtvé moře|mrtve more|Dead Sea|Izrael a Jordánsko|Asie|příroda|Tak slané, že se v něm nedá potopit.
+Hora Saint Helens|mount saint helens|Mount St. Helens|USA|Severní Amerika|příroda|Sopka, která roku 1980 vybuchla do boku.|1
+Yellowstone|yellowstone;old faithful|Old Faithful|USA|Severní Amerika|příroda|Slavný pravidelný gejzír v národním parku.|1
+Times Square|times square|Times Square|USA|Severní Amerika|stavba|Náměstí plné obřích reklamních obrazovek.|1
+Hollywood|nápis hollywood|Hollywood Sign|USA|Severní Amerika|stavba|Obří bílá písmena na kopci.|1
+CN Tower|cn tower|CN Tower|Kanada|Severní Amerika|stavba|Vysoká televizní věž v Torontu.|1
+Kapitol|kapitol;capitol|United States Capitol|USA|Severní Amerika|stavba|Sídlo amerického kongresu s velkou kopulí.|1
+Teotihuacán|teotihuacan|Teotihuacan|Mexiko|Severní Amerika|stavba|Starověké město s Pyramidou Slunce.|1
+Salar de Uyuni|uyuni|Salar de Uyuni|Bolívie|Jižní Amerika|příroda|Největší solná pláň na světě, po dešti zrcadlí oblohu.|1
+Andělské vodopády|salto angel;angel falls|Angel Falls|Venezuela|Jižní Amerika|příroda|Nejvyšší vodopád světa.|1
+Perito Moreno|ledovec perito moreno|Perito Moreno Glacier|Argentina|Jižní Amerika|příroda|Ledovec, ze kterého se odlamují obří kry.|1
+Galapágy|galapágy|Galápagos Islands|Ekvádor|Jižní Amerika|příroda|Ostrovy, kde Darwin pozoroval pěnkavy.|1
+Cukrová homole|pão de açúcar;sugarloaf|Sugarloaf Mountain|Brazílie|Jižní Amerika|příroda|Skalní kopec nad zátokou v Riu s lanovkou.|1
+Abú Simbel|abu simbel|Abu Simbel|Egypt|Afrika|stavba|Chrám s obřími sochami faraona vytesaný do skály.|1
+Údolí králů|udoli kralu|Valley of the Kings|Egypt|Afrika|stavba|Pohřebiště faraonů včetně Tutanchamona.|1
+Sahara|poušť sahara|Sahara|Afrika|Afrika|příroda|Největší horká poušť světa.|1
+Baobabová alej|baobaby;avenue of the baobabs|Avenue of the Baobabs|Madagaskar|Afrika|příroda|Cesta lemovaná obřími stromy.|1
+Velká mešita v Djenné|djenné|Great Mosque of Djenné|Mali|Afrika|stavba|Největší stavba z nepálených cihel.|1
+Masai Mara|masai mara|Maasai Mara|Keňa|Afrika|příroda|Savana, kudy táhnou stáda pakoňů.|1
+Brána Indie|india gate|India Gate|Indie|Asie|stavba|Válečný památník v Dillí.|1
+Potala|palác potala|Potala Palace|Čína (Tibet)|Asie|stavba|Palác dalajlámy vysoko v horách.|1
+Terakotová armáda|terakotová armáda|Terracotta Army|Čína|Asie|stavba|Tisíce hliněných vojáků u hrobky císaře.|1
+Bagan|bagan|Bagan|Myanmar|Asie|stavba|Pláň s tisíci buddhistickými chrámy.|1
+Borobudur|borobudur|Borobudur|Indonésie|Asie|stavba|Největší buddhistický chrám na světě.|1
+Fušimi Inari|fushimi inari|Fushimi Inari-taisha|Japonsko|Asie|stavba|Svatyně s tisíci oranžovými branami.|1
+Itsukušima|plovoucí brána;itsukushima|Itsukushima Shrine|Japonsko|Asie|stavba|Červená brána torii stojící v moři.|1
+Taipei 101|taipei 101|Taipei 101|Tchaj-wan|Asie|stavba|Mrakodrap tvarem připomínající bambus.|1
+Persepolis|persepolis|Persepolis|Írán|Asie|stavba|Ruiny hlavního města perské říše.|1
+Registán|registan;samarkand|Registan|Uzbekistán|Asie|stavba|Náměstí obklopené modrými medresami.|1
+Bajkal|jezero bajkal|Lake Baikal|Rusko|Asie|příroda|Nejhlubší jezero světa.|1
+Kreml|moskevský kreml|Moscow Kremlin|Rusko|Evropa|stavba|Pevnost a sídlo vlády v Moskvě.|1
+Ermitáž|zimní palác|Winter Palace|Rusko|Evropa|stavba|Carský palác, dnes slavné muzeum.|1
+Fontána di Trevi|di trevi;fontana di trevi|Trevi Fountain|Itálie|Evropa|stavba|Do fontány se hází mince pro návrat.|1
+Pantheon|pantheon|Pantheon, Rome|Itálie|Evropa|stavba|Antický chrám s otvorem v kopuli.|1
+Milánský dóm|duomo;milánská katedrála|Milan Cathedral|Itálie|Evropa|stavba|Bílá gotická katedrála s mnoha věžičkami.|1
+Pompeje|pompeje|Pompeii|Itálie|Evropa|stavba|Město zasypané popelem sopky Vesuv.|1
+Cinque Terre|cinque terre|Cinque Terre|Itálie|Evropa|stavba|Barevné vesničky na útesech nad mořem.|1
+Dolomity|tre cime;dolomity|Tre Cime di Lavaredo|Itálie|Evropa|příroda|Tři skalní věže v horách.|1
+Meteora|meteora|Meteora|Řecko|Evropa|stavba|Kláštery na vrcholcích skalních sloupů.|1
+Dubrovník|dubrovnik|Dubrovnik|Chorvatsko|Evropa|stavba|Opevněné staré město u moře.|1
+Plitvická jezera|plitvice|Plitvice Lakes National Park|Chorvatsko|Evropa|příroda|Tyrkysová jezera propojená vodopády.|1
+Parlament v Budapešti|budapešťský parlament|Hungarian Parliament Building|Maďarsko|Evropa|stavba|Novogotická budova na břehu Dunaje.|1
+Schönbrunn|zámek schönbrunn|Schönbrunn Palace|Rakousko|Evropa|stavba|Letní sídlo Habsburků ve Vídni.|1
+Hallstatt|hallstatt|Hallstatt|Rakousko|Evropa|stavba|Malebné městečko u jezera pod horami.|1
+Wawel|wawel|Wawel Castle|Polsko|Evropa|stavba|Královský hrad v Krakově.|1
+Belém|věž belém|Belém Tower|Portugalsko|Evropa|stavba|Pevnostní věž u ústí řeky v Lisabonu.|1
+Cliffs of Moher|útesy moher|Cliffs of Moher|Irsko|Evropa|příroda|Strmé útesy nad Atlantikem.|1
+Obrův chodník|giant's causeway|Giant's Causeway|Spojené království|Evropa|příroda|Tisíce šestibokých čedičových sloupů.|1
+Edinburský hrad|edinburgh|Edinburgh Castle|Spojené království|Evropa|stavba|Hrad na sopečné skále nad městem.|1
+London Eye|london eye|London Eye|Spojené království|Evropa|stavba|Obří vyhlídkové kolo u Temže.|1
+Versailles|versailles;versailleský zámek|Palace of Versailles|Francie|Evropa|stavba|Okázalý palác krále Slunce.|1
+Lednicko-valtický areál|lednice;zámek lednice|Lednice Castle|Česko|Evropa|stavba|Novogotický zámek s minaretem v parku.|1
+Český Krumlov|krumlov|Český Krumlov|Česko|Evropa|stavba|Město s hradem v meandru Vltavy.|1
+Tančící dům|tančící dům|Dancing House|Česko|Evropa|stavba|Moderní budova přezdívaná Ginger a Fred.|1
+Hrad Bouzov|bouzov|Bouzov Castle|Česko|Evropa|stavba|Pohádkový hrad, kde se natáčely pohádky.|1
+Macocha|propast macocha|Macocha Gorge|Česko|Evropa|příroda|Propast v Moravském krasu.|1
+Sněžka|snezka|Sněžka|Česko|Evropa|příroda|Nejvyšší hora Česka.|1
+Milford Sound|milford sound|Milford Sound|Nový Zéland|Austrálie|příroda|Fjord s vodopády na jihu ostrova.|1
+Dvanáct apoštolů|twelve apostles|The Twelve Apostles (Victoria)|Austrálie|Austrálie|příroda|Vápencové sloupy vyčnívající z moře.|1
+Bora Bora|bora bora|Bora Bora|Francouzská Polynésie|Austrálie|příroda|Tropický ostrov s tyrkysovou lagunou.|1

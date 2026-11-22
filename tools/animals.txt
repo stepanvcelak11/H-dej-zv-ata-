@@ -1,0 +1,207 @@
+# cs | synonyma (;) | vědecký název | skupina | kde žije | potrava | nápověda
+# skupiny: savec, pták, plaz, obojživelník, ryba, hmyz, pavoukovec, měkkýš, korýš, bezobratlý
+# potrava: b = býložravec, m = masožravec, v = všežravec, f = filtruje potravu z vody
+zebra stepní|zebra;zebra obecná|Equus quagga|savec|Afrika|b|Žije ve stádech v savaně a je příbuzná koně.
+levhart|leopard;levhart skvrnitý|Panthera pardus|savec|Afrika a Asie|m|Výborně šplhá a kořist si často odnáší na strom.
+lev|lev pustinný;lvice|Panthera leo|savec|Afrika|m|Jako jediná velká kočka žije ve skupinách.
+tygr|tygr indický;tygr ussurijský;tygr bengálský|Panthera tigris|savec|Asie|m|Největší kočkovitá šelma, rád plave.
+gepard|gepard štíhlý|Acinonyx jubatus|savec|Afrika|m|Nejrychlejší suchozemské zvíře.
+jaguár|jaguar|Panthera onca|savec|Jižní Amerika|m|Největší kočka amerického kontinentu.
+žirafa|žirafa severní;žirafa kapská|Giraffa camelopardalis|savec|Afrika|b|Nejvyšší žijící zvíře.
+slon africký|slon;slon africký savanový|Loxodonta africana|savec|Afrika|b|Největší suchozemský savec s velkýma ušima.
+slon indický|slon asijský;slon|Elephas maximus|savec|Asie|b|Má menší uši než jeho africký příbuzný.
+hroch obojživelný|hroch|Hippopotamus amphibius|savec|Afrika|b|Přes den odpočívá ve vodě, v noci se pase.
+nosorožec dvourohý|nosorožec;nosorožec černý|Diceros bicornis|savec|Afrika|b|Na nose má dva rohy z keratinu.
+gorila západní|gorila|Gorilla gorilla|savec|Afrika|b|Největší žijící primát.
+šimpanz učenlivý|šimpanz|Pan troglodytes|savec|Afrika|v|Používá nástroje, je naším nejbližším příbuzným.
+orangutan bornejský|orangutan|Pongo pygmaeus|savec|Asie|v|Rezavý lidoop žijící v korunách stromů.
+medvěd lední|lední medvěd;polární medvěd|Ursus maritimus|savec|Arktida|m|Loví tuleně na mořském ledu.
+medvěd hnědý|medvěd;grizzly;medvěd grizzly|Ursus arctos|savec|Evropa, Asie a Severní Amerika|v|Na zimu upadá do zimního spánku.
+panda velká|panda|Ailuropoda melanoleuca|savec|Asie|b|Živí se téměř výhradně bambusem.
+panda červená|panda malá;panda červená|Ailurus fulgens|savec|Asie|b|Má rezavou srst a huňatý pruhovaný ocas.
+koala medvídkovitý|koala|Phascolarctos cinereus|savec|Austrálie|b|Jí jen listy eukalyptu a hodně spí.
+klokan rudý|klokan|Osphranter rufus|savec|Austrálie|b|Pohybuje se skoky a mládě nosí ve vaku.
+vombat obecný|vombat|Vombatus ursinus|savec|Austrálie|b|Vačnatec, který má kostičkový trus.
+ptakopysk podivný|ptakopysk|Ornithorhynchus anatinus|savec|Austrálie|m|Savec, který snáší vejce a má kachní zobák.
+ježura australská|ježura|Tachyglossus aculeatus|savec|Austrálie|m|Ostnatý savec, který klade vejce.
+lenochod hnědokrký|lenochod|Bradypus variegatus|savec|Jižní Amerika|b|Většinu života visí hlavou dolů na větvích.
+mravenečník velký|mravenečník|Myrmecophaga tridactyla|savec|Jižní Amerika|m|Má dlouhý jazyk na lovení mravenců a termitů.
+pásovec devítipásý|pásovec|Dasypus novemcinctus|savec|Severní a Jižní Amerika|m|Tělo mu chrání kostěný krunýř.
+vlk obecný|vlk;vlk šedý|Canis lupus|savec|Evropa, Asie a Severní Amerika|m|Loví ve smečce a vyje.
+liška obecná|liška;liška rudá|Vulpes vulpes|savec|Evropa, Asie a Severní Amerika|v|Šelma s huňatým ocasem, často žije i ve městech.
+fenek berberský|fenek;liška pouštní|Vulpes zerda|savec|Afrika|v|Nejmenší psovitá šelma s obrovskýma ušima.
+liška polární|polární liška;pesec;pesec polární|Vulpes lagopus|savec|Arktida|m|V zimě má sněhově bílou srst.
+rys ostrovid|rys|Lynx lynx|savec|Evropa a Asie|m|Kočkovitá šelma se štětičkami na uších.
+jelen evropský|jelen;jelen lesní|Cervus elaphus|savec|Evropa a Asie|b|Samci mají mohutné parohy, které každý rok shazují.
+srnec obecný|srna;srnec;srnka|Capreolus capreolus|savec|Evropa|b|Nejběžnější malý jelenovitý savec našich lesů.
+los evropský|los|Alces alces|savec|Evropa, Asie a Severní Amerika|b|Největší jelenovitý savec s lopatovitými parohy.
+sob polární|sob|Rangifer tarandus|savec|Arktida|b|Parohy mají samci i samice.
+bizon americký|bizon|Bos bison|savec|Severní Amerika|b|Mohutný tur prérií s hrbem.
+zubr evropský|zubr|Bison bonasus|savec|Evropa|b|Největší suchozemský savec Evropy.
+velbloud dvouhrbý|velbloud;drabař|Camelus bactrianus|savec|Asie|b|V hrbech si ukládá tuk.
+dromedár|velbloud jednohrbý;velbloud|Camelus dromedarius|savec|Afrika a Asie|b|Má jen jeden hrb.
+lama krotká|lama|Lama glama|savec|Jižní Amerika|b|Když se zlobí, umí plivat.
+alpaka|alpaka|Vicugna pacos|savec|Jižní Amerika|b|Chová se kvůli jemné vlně.
+prase divoké|divočák;divoké prase;sele|Sus scrofa|savec|Evropa a Asie|v|Rád se válí v bahně a rozrývá zem.
+ježek západní|ježek;ježek obecný|Erinaceus europaeus|savec|Evropa|m|Při nebezpečí se stočí do klubíčka.
+veverka obecná|veverka|Sciurus vulgaris|savec|Evropa a Asie|v|Na zimu si schovává oříšky.
+bobr evropský|bobr|Castor fiber|savec|Evropa a Asie|b|Staví hráze z kmenů, které okouše zuby.
+vydra říční|vydra|Lutra lutra|savec|Evropa a Asie|m|Výborná plavkyně, živí se rybami.
+jezevec lesní|jezevec|Meles meles|savec|Evropa a Asie|v|Žije v norách a má výrazně pruhovanou hlavu.
+mýval severní|mýval|Procyon lotor|savec|Severní Amerika|v|Má na obličeji černou masku, jako bandita.
+skunk pruhovaný|skunk|Mephitis mephitis|savec|Severní Amerika|v|Brání se páchnoucí tekutinou.
+kaloň indický|kaloň;netopýr|Pteropus medius|savec|Asie|b|Létající savec, který jí ovoce.
+delfín skákavý|delfín|Tursiops truncatus|savec|oceány|m|Velmi inteligentní mořský savec.
+kosatka dravá|kosatka;orka|Orcinus orca|savec|oceány|m|Největší z delfínů, loví i tuleně.
+keporkak|velryba;plejtvák dlouhoploutvý|Megaptera novaeangliae|savec|oceány|f|Mořský obr známý svým zpěvem.
+tuleň obecný|tuleň|Phoca vitulina|savec|severní moře|m|Na souši je nemotorný, ve vodě rychlý.
+mrož lední|mrož|Odobenus rosmarus|savec|Arktida|m|Má dlouhé kly a husté vousy.
+lachtan kalifornský|lachtan|Zalophus californianus|savec|Severní Amerika|m|Mořský savec, který hlasitě štěká.
+kapybara|kapybara vodní|Hydrochoerus hydrochaeris|savec|Jižní Amerika|b|Největší hlodavec na světě.
+surikata|surikata vlnkatá|Suricata suricatta|savec|Afrika|m|Často stojí na zadních a hlídkuje.
+hyena skvrnitá|hyena|Crocuta crocuta|savec|Afrika|m|Její hlas zní jako smích.
+pakůň žíhaný|pakůň|Connochaetes taurinus|savec|Afrika|b|Vydává se na obrovské stěhování savanou.
+okapi|okapi jednobarvá|Okapia johnstoni|savec|Afrika|b|Nejbližší příbuzný žirafy, žije v pralese.
+tapír čabrakový|tapír|Tapirus indicus|savec|Asie|b|Má krátký chobotek a černobílé tělo.
+lemur kata|lemur|Lemur catta|savec|Afrika (Madagaskar)|v|Má dlouhý ocas s kroužky.
+mandril rýholící|mandril|Mandrillus sphinx|savec|Afrika|v|Opice s pestře zbarveným obličejem.
+kočka domácí|kočka;kocour;kotě|Felis catus|savec|celý svět|m|Domácí mazlíček, který přede.
+pes domácí|pes;pejsek;štěně|Canis familiaris|savec|celý svět|v|Nejvěrnější přítel člověka.
+kůň domácí|kůň;klisna;hřebec;koník|Equus caballus|savec|celý svět|b|Člověk na něm odedávna jezdí.
+tur domácí|kráva;býk;tele;skot|Bos taurus|savec|celý svět|b|Hospodářské zvíře, které nám dává mléko.
+prase domácí|prase;čuník;vepř;prasátko|Sus scrofa domesticus|savec|celý svět|v|Hospodářské zvíře s růžovým rypáčkem.
+ovce domácí|ovce;beran;jehně|Ovis aries|savec|celý svět|b|Chová se kvůli vlně.
+koza domácí|koza;kozel;kůzle|Capra hircus|savec|celý svět|b|Mečí a ráda leze po skalách.
+králík divoký|králík|Oryctolagus cuniculus|savec|Evropa|b|Žije v norách a má dlouhé uši.
+zajíc polní|zajíc|Lepus europaeus|savec|Evropa|b|Rychlý běžec s dlouhýma ušima, nežije v norách.
+kozorožec horský|kozorožec;kozoroh|Capra ibex|savec|Evropa (Alpy)|b|Žije v horách a má mohutné zahnuté rohy.
+puma americká|puma;kuguár|Puma concolor|savec|Severní a Jižní Amerika|m|Velká kočka jednobarevné srsti.
+irbis horský|sněžný levhart;irbis|Panthera uncia|savec|Asie|m|Kočka vysokých hor s velmi dlouhým ocasem.
+ocelot velký|ocelot|Leopardus pardalis|savec|Jižní Amerika|m|Menší skvrnitá kočka z pralesa.
+ďábel medvědovitý|tasmánský čert;tasmánský ďábel|Sarcophilus harrisii|savec|Austrálie (Tasmánie)|m|Dravý vačnatec s hlasitým křikem.
+křeček polní|křeček|Cricetus cricetus|savec|Evropa|v|Nosí si zásoby v lícních torbách.
+myš domácí|myš;myška|Mus musculus|savec|celý svět|v|Malý hlodavec, kterého loví kočky.
+potkan obecný|potkan;krysa|Rattus norvegicus|savec|celý svět|v|Hlodavec s dlouhým lysým ocasem.
+krtek obecný|krtek|Talpa europaea|savec|Evropa|m|Žije pod zemí a dělá hromádky hlíny.
+dikobraz obecný|dikobraz|Hystrix cristata|savec|Afrika a Evropa|b|Hlodavec s dlouhými bodlinami.
+hrabáč kapský|hrabáč|Orycteropus afer|savec|Afrika|m|Vypadá jako prase s ušima králíka a jí termity.
+impala|impala|Aepyceros melampus|savec|Afrika|b|Antilopa, která umí skákat velmi vysoko.
+buvol africký|buvol|Syncerus caffer|savec|Afrika|b|Mohutný tur se zahnutými rohy.
+vačice virginská|vačice|Didelphis virginiana|savec|Severní Amerika|v|Při nebezpečí předstírá, že je mrtvá.
+kuna skalní|kuna|Martes foina|savec|Evropa a Asie|v|Občas okusuje kabely v autech.
+lasice hranostaj|hranostaj|Mustela erminea|savec|Evropa, Asie a Severní Amerika|m|V zimě zbělá, jen špička ocasu zůstává černá.
+tučňák císařský|tučňák|Aptenodytes forsteri|pták|Antarktida|m|Nelétá, ale skvěle plave.
+plameňák růžový|plameňák|Phoenicopterus roseus|pták|Afrika, Evropa a Asie|f|Často stojí na jedné noze.
+páv korunkatý|páv|Pavo cristatus|pták|Asie|v|Samec má nádherný vějíř z peří.
+pštros dvouprstý|pštros|Struthio camelus|pták|Afrika|v|Největší pták na světě, neumí létat.
+emu hnědý|emu|Dromaius novaehollandiae|pták|Austrálie|v|Velký nelétavý pták, rychlý běžec.
+orel skalní|orel|Aquila chrysaetos|pták|Evropa, Asie a Severní Amerika|m|Velký dravec hor s ostrým zrakem.
+orel bělohlavý|orel|Haliaeetus leucocephalus|pták|Severní Amerika|m|Národní symbol USA.
+sova pálená|sova|Tyto alba|pták|celý svět|m|Noční lovec se srdčitým obličejem.
+výr velký|výr;sova|Bubo bubo|pták|Evropa a Asie|m|Naše největší sova s péřovými oušky.
+sovice sněžní|sněžná sova;sova sněžná|Bubo scandiacus|pták|Arktida|m|Bílá sova severu.
+tukan obrovský|tukan|Ramphastos toco|pták|Jižní Amerika|v|Má obrovský pestrý zobák.
+ara arakanga|ara;papoušek ara|Ara macao|pták|Jižní Amerika|b|Velký pestrobarevný papoušek.
+kakadu žlutočečelatý|kakadu;papoušek kakadu|Cacatua galerita|pták|Austrálie|b|Bílý papoušek se žlutou chocholkou.
+andulka vlnkovaná|andulka;papoušek vlnkovaný|Melopsittacus undulatus|pták|Austrálie|b|Oblíbený malý domácí papoušek.
+kolibřík rubínohrdlý|kolibřík|Archilochus colubris|pták|Severní Amerika|b|Umí létat i pozpátku a pije nektar.
+ledňáček říční|ledňáček|Alcedo atthis|pták|Evropa a Asie|m|Malý modrooranžový pták, který se vrhá do vody pro rybky.
+strakapoud velký|strakapoud;datel;datel strakapoud|Dendrocopos major|pták|Evropa a Asie|v|Bubnuje zobákem do kmenů stromů.
+čáp bílý|čáp|Ciconia ciconia|pták|Evropa a Afrika|m|Staví hnízda na komínech a podle pověstí nosí děti.
+labuť velká|labuť|Cygnus olor|pták|Evropa a Asie|b|Velký bílý vodní pták s dlouhým krkem.
+kachna divoká|kachna;kačer;kačena|Anas platyrhynchos|pták|celý svět|v|Samec má lesklou zelenou hlavu.
+husa velká|husa|Anser anser|pták|Evropa a Asie|b|Létá v klínech a hlasitě kejhá.
+pelikán bílý|pelikán|Pelecanus onocrotalus|pták|Afrika, Evropa a Asie|m|Pod zobákem má velký vak na ryby.
+volavka popelavá|volavka|Ardea cinerea|pták|Evropa, Asie a Afrika|m|Trpělivě stojí ve vodě a čeká na rybu.
+holub skalní|holub;holub domácí|Columba livia|pták|celý svět|b|Často ho potkáš na náměstí.
+vrabec domácí|vrabec|Passer domesticus|pták|celý svět|v|Malý hnědý pták, žije poblíž lidí.
+sýkora koňadra|sýkora;sýkorka|Parus major|pták|Evropa a Asie|v|Malý pták se žlutým bříškem a černou kravatou.
+kos černý|kos|Turdus merula|pták|Evropa|v|Samec je celý černý se žlutým zobákem.
+straka obecná|straka|Pica pica|pták|Evropa a Asie|v|Černobílý pták, o kterém se říká, že krade lesklé věci.
+havran polní|havran;vrána|Corvus frugilegus|pták|Evropa a Asie|v|Černý pták, v zimě ho vídáme na polích.
+vlaštovka obecná|vlaštovka|Hirundo rustica|pták|celý svět|m|Má vidlicovitý ocas a na zimu odlétá do Afriky.
+červenka obecná|červenka|Erithacus rubecula|pták|Evropa|m|Malý pták s oranžovou hrudí.
+krocan divoký|krocan;krůta|Meleagris gallopavo|pták|Severní Amerika|v|Tradiční jídlo na Den díkůvzdání.
+kur domácí|slepice;kohout;kuře;kur|Gallus gallus|pták|celý svět|v|Snáší vejce, která jíme k snídani.
+bažant obecný|bažant|Phasianus colchicus|pták|Evropa a Asie|v|Samec má dlouhý ocas a červený obličej.
+kiwi Mantellův|kiwi|Apteryx mantelli|pták|Nový Zéland|m|Nelétavý pták, má nosní dírky na konci zobáku.
+papuchalk severní|papuchalk|Fratercula arctica|pták|severní Atlantik|m|Má pestrý zobák a v něm nosí rybky.
+albatros stěhovavý|albatros|Diomedea exulans|pták|oceány|m|Pták s největším rozpětím křídel.
+sup bělohlavý|sup|Gyps fulvus|pták|Evropa, Asie a Afrika|m|Živí se mršinami.
+kukačka obecná|kukačka|Cuculus canorus|pták|Evropa a Asie|m|Klade vejce do cizích hnízd.
+jeřáb popelavý|jeřáb|Grus grus|pták|Evropa a Asie|v|Velký šedý pták, který při námluvách tančí.
+krokodýl nilský|krokodýl|Crocodylus niloticus|plaz|Afrika|m|Číhá ve vodě, ze které mu koukají jen oči.
+aligátor severoamerický|aligátor;aligátor americký|Alligator mississippiensis|plaz|Severní Amerika|m|Žije v bažinách Floridy.
+chameleon jemenský|chameleon;chameleón|Chamaeleo calyptratus|plaz|Asie|m|Mění barvu a oči mu koukají každé jinam.
+leguán zelený|leguán|Iguana iguana|plaz|Jižní Amerika|b|Velká ještěrka s hřebenem na zádech.
+varan komodský|varan;komodský drak|Varanus komodoensis|plaz|Asie (Indonésie)|m|Největší ještěr na světě.
+gekon obrovský|gekon;gekon tokaj|Gekko gecko|plaz|Asie|m|Umí běhat po stěnách i po stropě.
+želva sloní|želva;želva galapážská|Chelonoidis niger|plaz|Galapágy|b|Obří želva, která se dožívá přes 100 let.
+kareta obecná|mořská želva;želva;kareta|Caretta caretta|plaz|oceány|m|Vejce klade na písečných plážích.
+kobra indická|kobra|Naja naja|plaz|Asie|m|Jedovatý had, který roztahuje kápi.
+krajta mřížkovaná|krajta;hroznýš|Python reticulatus|plaz|Asie|m|Jeden z nejdelších hadů světa, kořist škrtí.
+chřestýš diamantový|chřestýš|Crotalus adamanteus|plaz|Severní Amerika|m|Varuje chrastítkem na konci ocasu.
+užovka obojková|užovka|Natrix natrix|plaz|Evropa|m|Neškodný had se žlutými skvrnami za hlavou.
+zmije obecná|zmije|Vipera berus|plaz|Evropa|m|Jediný jedovatý had v Česku.
+ještěrka obecná|ještěrka|Lacerta agilis|plaz|Evropa|m|Při nebezpečí umí odhodit ocas.
+agama vousatá|agama|Pogona vitticeps|plaz|Austrálie|v|Oblíbený terarijní ještěr s ostnitým „vousem“.
+moloch ostnitý|moloch;trnitý ďábel|Moloch horridus|plaz|Austrálie|m|Celý je pokrytý trny a jí mravence.
+bazilišek zelený|bazilišek|Basiliscus plumifrons|plaz|Střední Amerika|v|Umí běžet po hladině vody.
+skokan hnědý|žába;skokan|Rana temporaria|obojživelník|Evropa|m|Hnědá žába našich luk a rybníků.
+ropucha obecná|ropucha;žába|Bufo bufo|obojživelník|Evropa|m|Má bradavičnatou kůži a chodí spíš pěšky.
+rosnička zelená|rosnička;žabka|Hyla arborea|obojživelník|Evropa|m|Malá zelená žabka, která šplhá po rostlinách.
+pralesnička barvířská|pralesnička;šípová žába|Dendrobates tinctorius|obojživelník|Jižní Amerika|m|Jedovatá, nápadně zbarvená žabka.
+listovnice červenooká|listovnice;stromová žába|Agalychnis callidryas|obojživelník|Střední Amerika|m|Zelená žabka s velkýma červenýma očima.
+mlok skvrnitý|mlok|Salamandra salamandra|obojživelník|Evropa|m|Černý se žlutými skvrnami, žije ve vlhkých lesích.
+axolotl mexický|axolotl|Ambystoma mexicanum|obojživelník|Severní Amerika (Mexiko)|m|Vypadá, jako by se pořád usmíval, a dorůstá mu i ztracená končetina.
+čolek velký|čolek|Triturus cristatus|obojživelník|Evropa|m|Na jaře má samec na zádech hřebínek.
+žralok bílý|žralok;velký bílý žralok|Carcharodon carcharias|ryba|oceány|m|Obávaný mořský predátor z filmu Čelisti.
+kladivoun velký|žralok kladivoun;kladivoun|Sphyrna mokarran|ryba|oceány|m|Má hlavu ve tvaru kladiva.
+manta obrovská|manta;rejnok|Mobula birostris|ryba|oceány|f|Obří plochá ryba, která pod vodou jako by létala.
+klaun očkatý|klaun;nemo;klaun oranžový|Amphiprion ocellaris|ryba|oceány|v|Žije v sasankách, proslavil ho animovaný film.
+pstruh obecný|pstruh|Salmo trutta|ryba|Evropa|m|Žije v čistých horských potocích.
+kapr obecný|kapr|Cyprinus carpio|ryba|Evropa a Asie|v|V Česku se jí na Vánoce.
+štika obecná|štika|Esox lucius|ryba|Evropa, Asie a Severní Amerika|m|Dravá ryba s protáhlou tlamou plnou zubů.
+losos obecný|losos|Salmo salar|ryba|severní Atlantik|m|Plave proti proudu řek, aby se vytřel.
+koníček mořský|mořský koník;koníček|Hippocampus kuda|ryba|oceány|m|Mláďata nosí samec.
+ježík fourkovaný|ježík;ježík ostnitý|Diodon holocanthus|ryba|oceány|m|Při nebezpečí se nafoukne do bodlinaté koule.
+piraňa Natterova|piraňa;pirana|Pygocentrus nattereri|ryba|Jižní Amerika|m|Ryba s ostrými zuby, loví v hejnech.
+muréna zelená|muréna|Gymnothorax funebris|ryba|oceány|m|Hadovitá ryba, která se schovává ve skalách.
+mečoun obecný|mečoun|Xiphias gladius|ryba|oceány|m|Má protáhlou čelist ve tvaru meče.
+karas zlatý|zlatá rybka;akvarijní rybka|Carassius auratus|ryba|celý svět|v|Oblíbená rybka do akvárií a jezírek.
+perutýn ohnivý|perutýn|Pterois volitans|ryba|oceány|m|Krásná, ale jedovatá ryba s dlouhými ostny.
+tuňák obecný|tuňák|Thunnus thynnus|ryba|oceány|m|Rychlý plavec, často končí v konzervě.
+sumec velký|sumec|Silurus glanis|ryba|Evropa|m|Největší sladkovodní ryba Evropy s dlouhými vousy.
+včela medonosná|včela|Apis mellifera|hmyz|celý svět|b|Dává nám med a vosk.
+čmelák zemní|čmelák|Bombus terrestris|hmyz|Evropa|b|Chlupatý a bzučí, opyluje květiny.
+vosa obecná|vosa|Vespula vulgaris|hmyz|Evropa|v|Žlutočerná, v létě ji láká limonáda.
+mravenec lesní|mravenec|Formica rufa|hmyz|Evropa|v|Staví velká mraveniště z jehličí.
+slunéčko sedmitečné|beruška;slunéčko|Coccinella septempunctata|hmyz|Evropa a Asie|m|Červený brouček s černými tečkami.
+roháč obecný|roháč|Lucanus cervus|hmyz|Evropa|b|Náš největší brouk, samec má obří kusadla.
+otakárek fenyklový|otakárek;motýl|Papilio machaon|hmyz|Evropa a Asie|b|Velký žlutočerný motýl s ocásky na křídlech.
+monarcha stěhovavý|monarcha;motýl|Danaus plexippus|hmyz|Severní Amerika|b|Motýl, který se stěhuje tisíce kilometrů.
+babočka paví oko|paví oko;babočka;motýl|Aglais io|hmyz|Evropa a Asie|b|Motýl s velkými „očima“ na křídlech.
+šídlo modré|vážka;šídlo|Aeshna cyanea|hmyz|Evropa|m|Rychlý létající lovec u vody.
+kudlanka nábožná|kudlanka|Mantis religiosa|hmyz|Evropa, Asie a Afrika|m|Přední nohy drží, jako by se modlila.
+kobylka zelená|kobylka;saranče;koník|Tettigonia viridissima|hmyz|Evropa|m|Zelený skokan s dlouhými tykadly, cvrlikající v trávě.
+cvrček polní|cvrček|Gryllus campestris|hmyz|Evropa|v|Černý hmyz, který v létě cvrká u nory.
+ruměnice pospolná|ruměnice;kněžice;vojáček|Pyrrhocoris apterus|hmyz|Evropa|b|Červenočerné ploštice, které se slunívají ve skupinách u lip.
+chroust obecný|chroust|Melolontha melolontha|hmyz|Evropa|b|Hnědý brouk, který se objevuje v květnu.
+moucha domácí|moucha|Musca domestica|hmyz|celý svět|v|Otravně bzučí kolem jídla.
+křižák obecný|pavouk;křižák|Araneus diadematus|pavoukovec|Evropa|m|Na zádech má bílý kříž a plete kruhové sítě.
+sklípkan|tarantule;sklípkan mexický|Brachypelma hamorii|pavoukovec|Severní Amerika (Mexiko)|m|Velký chlupatý pavouk.
+štír císařský|štír|Pandinus imperator|pavoukovec|Afrika|m|Má klepeta a jedovaté žihadlo na ocase.
+klíště obecné|klíště|Ixodes ricinus|pavoukovec|Evropa|m|Malý parazit, který se přisaje na kůži.
+hlemýžď zahradní|hlemýžď;šnek|Helix pomatia|měkkýš|Evropa|b|Nosí si domeček na zádech.
+chobotnice pobřežní|chobotnice|Octopus vulgaris|měkkýš|oceány|m|Má osm chapadel a umí měnit barvu.
+sépie obecná|sépie|Sepia officinalis|měkkýš|Evropa (moře)|m|Při útěku vypouští inkoust.
+plzák španělský|slimák;plzák|Arion vulgaris|měkkýš|Evropa|b|Zahradní škůdce bez ulity.
+loděnka hlubinná|nautilus;loděnka|Nautilus pompilius|měkkýš|oceány|m|Živoucí fosilie se spirálovitou ulitou.
+humr evropský|humr|Homarus gammarus|korýš|Evropa (moře)|m|Velký mořský korýš s mohutnými klepety.
+krab pobřežní|krab|Carcinus maenas|korýš|Evropa (moře)|v|Chodí bokem.
+rak říční|rak|Astacus astacus|korýš|Evropa|v|Žije v čistých potocích a leze pozpátku.
+kreveta|garnát;kreveta čisticí|Lysmata amboinensis|korýš|oceány|v|Čistí ryby od parazitů.
+talířovka ušatá|medúza;talířovka|Aurelia aurita|bezobratlý|oceány|m|Průhledné tělo, které se vznáší ve vodě.
+hvězdice červená|hvězdice;mořská hvězdice|Asterias rubens|bezobratlý|Evropa (moře)|m|Má pět ramen, a když o jedno přijde, doroste jí.
+ježovka purpurová|ježovka;mořský ježek|Strongylocentrotus purpuratus|bezobratlý|oceány|b|Kulatá a celá pokrytá ostny.
+žížala obecná|žížala|Lumbricus terrestris|bezobratlý|Evropa|b|Po dešti leze ven z půdy.
