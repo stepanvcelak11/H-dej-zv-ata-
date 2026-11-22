@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '1.0.0';
+  const VERSION = '1.1.0';
   const IMG_CACHE = 'hz-img-v1';
 
   // ------------------------------------------------------------ pomocné
@@ -18,11 +18,14 @@
   const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const withTimeout = (p, ms) => Promise.race([p, sleep(ms).then(() => { throw new Error('timeout'); })]);
+  /** SVG ikona ze spritu v index.html */
+  const I = (name, cls = '') => `<svg class="i ${cls}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
+  const PLAYER_COLORS = ['var(--p1)', 'var(--p2)'];
 
   let toastTimer;
-  function toast(msg, ms = 2600, onClick) {
+  function toast(msg, ms = 2600, onClick, icon = 'info') {
     const t = $('#toast');
-    t.innerHTML = msg;
+    t.innerHTML = (icon ? I(icon) : '') + `<span>${msg}</span>`;
     t.classList.remove('hidden');
     t.onclick = onClick || (() => t.classList.add('hidden'));
     clearTimeout(toastTimer);
@@ -36,14 +39,22 @@
   const BY_ID = new Map(ALL_ITEMS.map(i => [i.id, i]));
 
   const OTHER = ['pavoukovec', 'měkkýš', 'korýš', 'bezobratlý'];
+  // u každé volby je fotka typického zástupce
   const GROUPS = [
-    { v: 'savec', label: '🦁 Savci' }, { v: 'pták', label: '🐦 Ptáci' }, { v: 'plaz', label: '🦎 Plazi' },
-    { v: 'obojživelník', label: '🐸 Obojživelníci' }, { v: 'ryba', label: '🐟 Ryby' }, { v: 'hmyz', label: '🐞 Hmyz' },
-    { v: 'ostatní', label: '🦀 Pavouci, korýši a další' },
+    { v: 'savec', label: 'Savci', img: 'lev' }, { v: 'pták', label: 'Ptáci', img: 'ara-arakanga' },
+    { v: 'plaz', label: 'Plazi', img: 'chameleon-jemensky' }, { v: 'obojživelník', label: 'Obojživelníci', img: 'listovnice-cervenooka' },
+    { v: 'ryba', label: 'Ryby', img: 'klaun-ockaty' }, { v: 'hmyz', label: 'Hmyz', img: 'slunecko-sedmitecne' },
+    { v: 'ostatní', label: 'Pavouci, korýši a další', img: 'chobotnice-pobrezni' },
   ];
   const CONTINENTS = [
-    { v: 'Evropa', label: '🏰 Evropa' }, { v: 'Asie', label: '🏯 Asie' }, { v: 'Afrika', label: '🐪 Afrika' },
-    { v: 'Amerika', label: '🗽 Amerika' }, { v: 'Austrálie', label: '🦘 Austrálie a Oceánie' },
+    { v: 'Evropa', label: 'Evropa', img: 'eiffelova-vez' }, { v: 'Asie', label: 'Asie', img: 'tadz-mahal' },
+    { v: 'Afrika', label: 'Afrika', img: 'velka-pyramida-v-gize' }, { v: 'Amerika', label: 'Amerika', img: 'socha-svobody' },
+    { v: 'Austrálie', label: 'Austrálie a Oceánie', img: 'opera-v-sydney' },
+  ];
+  const THEMES = [
+    { v: 'animals', label: 'Zvířata', imgs: ['zebra-stepni'] },
+    { v: 'landmarks', label: 'Místa', imgs: ['koloseum'] },
+    { v: 'both', label: 'Obojí', imgs: ['levhart', 'velka-cinska-zed'] },
   ];
   const GROUP_TEXT = {
     savec: 'savec', pták: 'pták', plaz: 'plaz', obojživelník: 'obojživelník', ryba: 'ryba', hmyz: 'hmyz',
@@ -54,6 +65,7 @@
     f: 'Potravu si filtruje z vody.',
   };
   const groupOf = it => OTHER.includes(it.group) ? 'ostatní' : it.group;
+  const imgOf = id => (BY_ID.get(id) || {}).img || '';
 
   // ------------------------------------------------------------ nastavení
   const DEFAULTS = {
@@ -76,23 +88,57 @@
   $$('[data-go]').forEach(b => b.addEventListener('click', () => show(b.dataset.go)));
 
   // ------------------------------------------------------------ domovská obrazovka
-  function summaryText(s) {
-    const theme = { animals: 'Zvířata', landmarks: 'Místa', both: 'Zvířata i místa' }[s.theme];
-    const r = s.rounds ? `${s.rounds} kol` : 'nekonečno';
-    return `${theme} · ${Distort.MODES[s.mode].icon} ${Distort.MODES[s.mode].label} · ${Distort.DIFFICULTY[s.diff].label} · ${r}` +
-      (s.precise && s.theme !== 'landmarks' ? ' · 🔬 s druhem' : '') + (s.players === 2 ? ' · 👥 ve dvou' : '');
+  function summaryHtml(s) {
+    const theme = { animals: ['paw-print', 'Zvířata'], landmarks: ['landmark', 'Místa'], both: ['globe', 'Zvířata i místa'] }[s.theme];
+    const m = Distort.MODES[s.mode];
+    const tags = [
+      [theme[0], theme[1]],
+      [m.icon, m.label],
+      ['target', Distort.DIFFICULTY[s.diff].label],
+      ['flag', s.rounds ? `${s.rounds} kol` : 'bez konce'],
+    ];
+    if (s.precise && s.theme !== 'landmarks') tags.push(['microscope', 's druhem']);
+    if (s.players === 2) tags.push(['users', 've dvou']);
+    return tags.map(([ic, t]) => `<span>${I(ic)}${esc(t)}</span>`).join('');
   }
+
+  let heroTimer = 0;
+  function heroNext() {
+    const img = $('#heroImg');
+    const pool = ANIMALS.filter(a => a.img && !/^https?:/.test(a.img));
+    if (!pool.length || !img) return;
+    const it = pick(pool);
+    img.classList.remove('ready');
+    img.onload = () => {
+      img.style.setProperty('--ox', `${35 + Math.random() * 30}%`);
+      img.style.setProperty('--oy', `${35 + Math.random() * 30}%`);
+      img.style.animation = 'none'; void img.offsetWidth; img.style.animation = '';
+      img.classList.add('ready');
+    };
+    img.src = it.img;
+    clearTimeout(heroTimer);
+    heroTimer = setTimeout(() => { if ($('#home').classList.contains('active')) heroNext(); }, 11000);
+  }
+
   function renderHome() {
-    $('#quickSummary').textContent = summaryText(settings);
+    $('#quickSummary').innerHTML = summaryHtml(settings);
     const d = store.get('daily', {})[todayKey()];
-    $('#dailyBadge').textContent = d ? `✓ ${d.score} b.` : 'nová';
-    $('#dailyBadge').classList.toggle('done', !!d);
+    const db = $('#dailyBadge');
+    db.textContent = d ? `Hotovo · ${d.score} b.` : 'Nová výzva!';
+    db.className = 'tile-s ' + (d ? 'done' : 'new');
+    const col = store.get('collection', {});
+    const total = ALL_ITEMS.filter(i => i.img && !i.online).length;
+    const have = ALL_ITEMS.filter(i => col[i.id]).length;
+    $('#colBadge').textContent = `${have} z ${total} objeveno`;
+    const st = store.get('stats', {});
+    $('#statsBadge').textContent = st.rounds ? `${Math.round((st.correct || 0) / st.rounds * 100)} % uhodnuto` : 'zatím prázdné';
     updateNet();
+    heroNext();
   }
 
   function updateNet() {
     const on = Online.isOnline();
-    $('#netStatus').textContent = on ? '🌐 Online' : '✈️ Offline';
+    $('#netStatus').innerHTML = on ? `${I('wifi')}Online` : `${I('wifi-off')}Offline`;
     $('#netStatus').classList.toggle('off', !on);
   }
   window.addEventListener('online', updateNet);
@@ -113,8 +159,8 @@
     box.innerHTML = '';
     all.forEach(g => {
       const b = document.createElement('button');
-      b.textContent = g.label;
-      b.className = selected.includes(g.v) ? 'on' : '';
+      b.innerHTML = `<img src="${esc(imgOf(g.img))}" alt="" loading="lazy">${esc(g.label)}${I('check')}`;
+      b.className = 'pchip' + (selected.includes(g.v) ? ' on' : '');
       b.onclick = () => {
         let next = selected.includes(g.v) ? selected.filter(x => x !== g.v) : [...selected, g.v];
         if (!next.length) { toast('Aspoň jedna skupina musí zůstat zapnutá.'); return; }
@@ -125,14 +171,25 @@
   }
 
   function renderSetup() {
-    seg('#optTheme', settings.theme, v => { settings.theme = v; saveSettings(); renderSetup(); });
+    const themes = $('#optTheme');
+    themes.innerHTML = '';
+    THEMES.forEach(t => {
+      const b = document.createElement('button');
+      b.className = 'theme' + (settings.theme === t.v ? ' on' : '');
+      b.innerHTML = `<span class="ti">${t.imgs.map(id => `<img src="${esc(imgOf(id))}" alt="">`).join('')}</span>` +
+        `<b>${t.label}</b><span class="check">${I('check')}</span>`;
+      b.onclick = () => { settings.theme = t.v; saveSettings(); renderSetup(); };
+      themes.appendChild(b);
+    });
 
     const modes = $('#optMode');
     modes.innerHTML = '';
     Object.entries(Distort.MODES).forEach(([k, m]) => {
       const b = document.createElement('button');
       b.className = 'mode' + (settings.mode === k ? ' on' : '');
-      b.innerHTML = `<span class="mi">${m.icon}</span><span>${m.label}</span>`;
+      b.dataset.mode = k;
+      b.innerHTML = (k === 'random' ? `<div class="mode-dice">${I('dices')}</div>` : '<canvas width="160" height="160"></canvas>') +
+        `<span>${m.label}</span>`;
       b.onclick = () => { settings.mode = k; saveSettings(); renderSetup(); };
       modes.appendChild(b);
     });
@@ -143,21 +200,20 @@
     Distort.DIFFICULTY.forEach((d, i) => {
       const b = document.createElement('button');
       b.dataset.v = i;
-      b.textContent = d.label;
+      b.innerHTML = `<span class="lvl">${[0, 1, 2, 3].map(j => `<i class="${j <= i ? 'f' : ''}"></i>`).join('')}</span>${d.label}`;
       diff.appendChild(b);
     });
     seg('#optDiff', settings.diff, v => { settings.diff = +v; saveSettings(); renderSetup(); });
     $('#diffDesc').textContent = `Body ×${String(Distort.DIFFICULTY[settings.diff].mult).replace('.', ',')}`;
 
     seg('#optPrecise', settings.precise ? 1 : 0, v => { settings.precise = v === '1'; saveSettings(); renderSetup(); });
-    $('#preciseDesc').innerHTML = settings.precise
-      ? 'Musíš napsat celý název i s druhem, např. <b>sojka obecná</b> nebo <b>orel skalní</b>. Body ×1,25.'
-      : 'Stačí poznat, o jaké zvíře jde, např. <b>sojka</b> nebo <b>orel</b>. Druh („obecná“, „skalní“) psát nemusíš.';
     $('#fieldPrecise').classList.toggle('hidden', settings.theme === 'landmarks');
     $('#fieldGroups').classList.toggle('hidden', settings.theme === 'landmarks');
     $('#fieldContinents').classList.toggle('hidden', settings.theme === 'animals');
     chips('#optGroups', GROUPS, settings.groups, v => { settings.groups = v; saveSettings(); renderSetup(); });
     chips('#optContinents', CONTINENTS, settings.continents, v => { settings.continents = v; saveSettings(); renderSetup(); });
+    $('#groupsCount').textContent = `${settings.groups.length} z ${GROUPS.length}`;
+    $('#contCount').textContent = `${settings.continents.length} z ${CONTINENTS.length}`;
 
     seg('#optPlayers', settings.players, v => { settings.players = +v; saveSettings(); renderSetup(); });
     $('#playerNames').classList.toggle('hidden', settings.players !== 2);
@@ -165,14 +221,15 @@
     $('#p2name').value = settings.names[1] || '';
 
     seg('#optRounds', settings.rounds, v => { settings.rounds = +v; saveSettings(); renderSetup(); });
-    $('#roundsSub').textContent = settings.players === 2 && settings.rounds ? '(pro každého hráče)' : '';
+    $('#roundsSub').textContent = settings.players === 2 && settings.rounds ? 'pro každého hráče' : '';
 
     $('#optOnline').checked = settings.online;
     $('#optEase').checked = settings.ease;
     $('#optTimer').checked = settings.timer;
 
     const n = offlinePool(settings).length;
-    $('#btnStart').textContent = n ? '▶ Začít hru' : '⚠️ Žádné obrázky pro tento výběr';
+    $('#btnStart').innerHTML = n ? `${I('play')}<span>Začít hru · ${n} obrázků</span>` : `${I('circle-alert')}<span>Pro tento výběr nic není</span>`;
+    $('#btnStart').disabled = !n;
     drawPreview();
   }
 
@@ -189,10 +246,17 @@
     if (!pool.length) { canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height); return; }
     const go = () => {
       const mode = settings.mode === 'random' ? 'random' : settings.mode;
-      previewState = Distort.createState(mode, settings.diff, (Math.random() * 1e9) | 0);
+      const seed = (Math.random() * 1e9) | 0;
+      previewState = Distort.createState(mode, settings.diff, seed);
       previewState.ease = settings.ease;
-      if (previewState.mode === 'reveal') previewState.startedAt = performance.now() - 6000;
+      if (previewState.mode === 'reveal') previewState.startedAt = performance.now() - 7000;
       Distort.render(canvas, previewImg, previewState);
+      // malé živé náhledy u každého režimu
+      $$('#optMode .mode canvas').forEach(c => {
+        const st = Distort.createState(c.parentElement.dataset.mode, settings.diff, seed);
+        if (st.mode === 'reveal') st.startedAt = performance.now() - 7000;
+        Distort.render(c, previewImg, st);
+      });
     };
     if (!previewImg || newImage || !pool.some(p => p.img && previewImg.dataset.src === p.img)) {
       const it = pick(pool);
@@ -200,6 +264,7 @@
     } else go();
   }
   $('#previewCanvas').addEventListener('click', () => drawPreview(true));
+  $('#btnPreviewNext').addEventListener('click', () => drawPreview(true));
 
   // ------------------------------------------------------------ výběr položek
   function matchesFilter(it, s) {
@@ -369,8 +434,12 @@
     const player = game.players[game.turn % game.players.length];
 
     if (game.players.length > 1) {
+      const pi = game.turn % game.players.length;
       $('#turnName').textContent = player.name;
-      $('#turnScore').textContent = game.players.map(p => `${p.name}: ${p.score}`).join('  ·  ');
+      $('#turnAvatar').textContent = player.name.charAt(0).toUpperCase();
+      $('#turnAvatar').style.background = PLAYER_COLORS[pi];
+      $('#turnScore').innerHTML = game.players.map((p, i) =>
+        `<div><span><i class="pdot" style="background:${PLAYER_COLORS[i]}"></i>${esc(p.name)}</span><b>${p.score}</b></div>`).join('');
       $('#turnOverlay').classList.remove('hidden');
       await new Promise(r => { $('#btnTurnGo').onclick = r; });
       $('#turnOverlay').classList.add('hidden');
@@ -393,7 +462,7 @@
       res = await prepareItem({ ...game.s, online: false }, game.used).catch(e => e);
       if (res instanceof Error) {
         $('#loading').classList.add('hidden');
-        toast('Nepodařilo se načíst obrázek. 😕');
+        toast('Nepodařilo se načíst obrázek.', 3000, null, 'circle-alert');
         quitToHome();
         return;
       }
@@ -416,7 +485,7 @@
       started: Date.now(), done: false, timeLeft: game.s.timer ? 60 : null,
     };
     $('#loading').classList.add('hidden');
-    $('#modeTag').textContent = `${Distort.MODES[st.mode].icon} ${Distort.MODES[st.mode].label}`;
+    $('#modeTag').innerHTML = `${I(Distort.MODES[st.mode].icon)}${Distort.MODES[st.mode].label}`;
     $('#sourceTag').classList.toggle('hidden', !item.online);
     updateGameUI();
     draw();
@@ -433,13 +502,14 @@
     clearInterval(timerId);
     $('#timer').classList.toggle('hidden', !round.timeLeft);
     if (round.timeLeft) {
-      $('#timer').textContent = round.timeLeft;
+      $('#timer').innerHTML = `${I('timer')}${round.timeLeft}`;
+      $('#timer').classList.remove('warn');
       timerId = setInterval(() => {
         if (!round || round.done) { clearInterval(timerId); return; }
         round.timeLeft--;
-        $('#timer').textContent = round.timeLeft;
+        $('#timer').innerHTML = `${I('timer')}${round.timeLeft}`;
         $('#timer').classList.toggle('warn', round.timeLeft <= 10);
-        if (round.timeLeft <= 0) { clearInterval(timerId); finishRound(false, '⏰ Čas vypršel!'); }
+        if (round.timeLeft <= 0) { clearInterval(timerId); finishRound(false, 'Čas vypršel!'); }
       }, 1000);
     }
     const input = $('#guessInput');
@@ -459,20 +529,30 @@
     const per = g.players.length;
     const roundNo = Math.floor(g.turn / per) + 1;
     const totalR = g.total === Infinity ? '∞' : g.total / per;
-    $('#roundInfo').textContent = g.daily ? `Denní výzva ${roundNo}/${totalR}` : `Kolo ${roundNo}/${totalR}`;
-    $('#playerInfo').textContent = per > 1 ? `👤 ${r.player.name}` : '';
-    $('#scoreInfo').textContent = r.player.score;
-    $('#attempts').innerHTML = [0, 1, 2].map(i => `<span class="dot ${i < r.attempts ? 'on' : ''}"></span>`).join('') +
-      `<span class="att-label">${r.attempts} ${r.attempts === 1 ? 'pokus' : 'pokusy'}</span>`;
+    $('#roundInfo').textContent = g.daily ? `Denní výzva · ${roundNo} z ${totalR}` : `Kolo ${roundNo}` + (g.total === Infinity ? '' : ` z ${totalR}`);
+    $('#roundProgress').style.width = g.total === Infinity ? '100%' : `${Math.round((g.turn + (r.done ? 1 : 0)) / g.total * 100)}%`;
+    const pi = g.players.indexOf(r.player);
+    $('#playerInfo').classList.toggle('hidden', per < 2);
+    $('#playerInfo').innerHTML = per > 1 ? `<span class="av" style="background:${PLAYER_COLORS[pi]}">${esc(r.player.name.charAt(0).toUpperCase())}</span>Hraje ${esc(r.player.name)}` : '';
+    const sc = $('#scoreInfo');
+    if (sc.textContent !== String(r.player.score)) {
+      sc.textContent = r.player.score;
+      sc.parentElement.classList.remove('bump'); void sc.offsetWidth; sc.parentElement.classList.add('bump');
+    }
+    const prev = $('#attempts').dataset.n;
+    $('#attempts').innerHTML = [0, 1, 2].map(i =>
+      `<svg class="i fill ${i < r.attempts ? '' : 'lost'} ${prev && i === r.attempts && +prev > r.attempts ? 'lose' : ''}" aria-hidden="true"><use href="#i-heart"/></svg>`).join('');
+    $('#attempts').dataset.n = r.attempts;
+    $('#attempts').setAttribute('aria-label', `Zbývající pokusy: ${r.attempts}`);
     const left = r.hints.length - r.hintsUsed;
     $('#btnHint').disabled = left <= 0 || r.done;
-    $('#hintCost').textContent = left > 0 ? `(−15 b. · zbývá ${left})` : '(žádná další)';
+    $('#hintCost').textContent = left > 0 ? `−15 b.` : 'došly';
   }
 
   function showHint() {
     if (!round || round.done || round.hintsUsed >= round.hints.length) return;
     const li = document.createElement('li');
-    li.innerHTML = `💡 ${round.hints[round.hintsUsed]}`;
+    li.innerHTML = `<span class="hn">${round.hintsUsed + 1}</span><span>${round.hints[round.hintsUsed]}</span>`;
     $('#hintList').appendChild(li);
     round.hintsUsed++;
     updateGameUI();
@@ -499,8 +579,8 @@
     if (res === 'close' && !round.closeUsed) {
       round.closeUsed = true;
       feedback(game.s.precise && round.item.theme === 'animals'
-        ? '🤏 Skoro! Správné zvíře, ale napiš i druh. <small>(pokus se nepočítá)</small>'
-        : '🤏 Skoro! Zkus to upřesnit. <small>(pokus se nepočítá)</small>', 'close');
+        ? `${I('hand')}<span>Skoro! Správné zvíře, ale napiš i druh. <small>Pokus se nepočítá.</small></span>`
+        : `${I('hand')}<span>Skoro! Zkus to upřesnit. <small>Pokus se nepočítá.</small></span>`, 'close');
       input.select();
       return;
     }
@@ -511,8 +591,8 @@
     if (navigator.vibrate) navigator.vibrate(60);
     if (round.attempts <= 0) { finishRound(false); return; }
     const other = Match.findItem(guess, ALL_ITEMS);
-    const msg = other && other.id !== round.item.id ? `❌ Není to ${esc(other.name)}.` : `❌ „${esc(guess)}“ to není.`;
-    feedback(msg + (round.st.ease ? ' Obrázek je teď o kousek lehčí.' : ''), 'wrong');
+    const msg = other && other.id !== round.item.id ? `Není to ${esc(other.name)}.` : `„${esc(guess)}“ to není.`;
+    feedback(`${I('circle-x')}<span>${msg}${round.st.ease ? ' <small>Obrázek je teď o kousek lehčí.</small>' : ''}</span>`, 'wrong');
     input.value = '';
     updateGameUI();
   });
@@ -548,20 +628,25 @@
     if (ok && navigator.vibrate) navigator.vibrate([30, 40, 30]);
 
     // výsledek
-    $('#resultHead').innerHTML = ok
-      ? `<span class="ok">✅ Správně!</span>`
-      : `<span class="bad">${reason || '❌ Tentokrát ne.'} Bylo to:</span>`;
+    const rh = $('#resultHead');
+    rh.className = 'result-head ' + (ok ? 'ok' : 'bad');
+    rh.innerHTML = ok
+      ? `${I('circle-check')}${round.attempts === 3 && !round.hintsUsed ? 'Na první dobrou!' : 'Správně!'}`
+      : `${I(reason ? 'clock' : 'circle-x')}${reason || 'Tentokrát ne'} · bylo to:`;
     Distort.renderFull($('#resultCanvas'), round.img);
     $('#resultName').textContent = cap(it.name);
-    $('#resultSci').innerHTML = it.sci ? `<i>${esc(it.sci)}</i>` : esc(it.country || '');
-    $('#resultPoints').textContent = ok ? `+${pts} bodů` : '0 bodů';
-    $('#resultPoints').className = 'points ' + (ok ? 'ok' : 'bad');
+    $('#resultSci').innerHTML = it.sci ? `<i>${esc(it.sci)}</i>` : `${esc(it.country || '')}`;
+    $('#resultPoints').textContent = ok ? `+${pts} b.` : '0 b.';
+    $('#resultPoints').className = 'points-badge' + (ok ? '' : ' zero');
     const factEl = $('#resultFact');
     factEl.textContent = it.hint || '';
-    loadFact(it, round.detail).then(f => { if (f && $('#resultName').textContent === cap(it.name)) factEl.textContent = f; });
+    $('#resultFactBox').classList.toggle('hidden', !it.hint);
+    loadFact(it, round.detail).then(f => {
+      if (f && $('#resultName').textContent === cap(it.name)) { factEl.textContent = f; $('#resultFactBox').classList.remove('hidden'); }
+    });
     $('#resultCredit').innerHTML = creditHtml(it);
     const last = game.turn + 1 >= game.total;
-    $('#btnNext').textContent = last ? 'Výsledky ›' : 'Další ›';
+    $('#btnNext').innerHTML = `<span>${last ? 'Výsledky' : 'Další'}</span>${I(last ? 'trophy' : 'arrow-right')}`;
     $('#resultOverlay').classList.remove('hidden');
     $('#resultOverlay .sheet').scrollTop = 0;
     document.activeElement && document.activeElement.blur();
@@ -588,7 +673,7 @@
     if (!it.credit) return '';
     const lic = it.license ? ` · ${esc(String(it.license).toUpperCase())}` : '';
     const src = it.source ? ` · <a href="${esc(it.source)}" target="_blank" rel="noopener">zdroj</a>` : '';
-    return `📷 ${esc(it.credit)}${lic}${src}`;
+    return `${I('camera')}<span>${esc(it.credit)}${lic}${src}</span>`;
   }
 
   $('#btnNext').addEventListener('click', () => {
@@ -626,27 +711,36 @@
     store.set('stats', stats);
 
     const ps = [...g.players].sort((a, b) => b.score - a.score);
-    let title = 'Konec hry';
-    if (g.players.length > 1) title = ps[0].score === ps[1].score ? '🤝 Remíza!' : `🏆 Vyhrává ${ps[0].name}!`;
+    let title = 'Konec hry', icon = 'flag';
+    const tie = g.players.length > 1 && ps[0].score === ps[1].score;
+    if (g.players.length > 1) { title = tie ? 'Remíza!' : `Vyhrává ${ps[0].name}!`; icon = tie ? 'users' : 'trophy'; }
     else {
       const ok = g.history.filter(h => h.ok).length;
-      title = ok === g.history.length && ok ? '🌟 Bez chyby!' : `Uhodnuto ${ok} z ${g.history.length}`;
+      if (ok === g.history.length && ok) { title = 'Bez jediné chyby!'; icon = 'trophy'; }
+      else { title = `Uhodnuto ${ok} z ${g.history.length}`; icon = ok ? 'medal' : 'flag'; }
     }
-    if (g.daily) title = '📅 Denní výzva hotová';
+    if (g.daily) { title = 'Denní výzva hotová'; icon = 'calendar-days'; }
     $('#endTitle').textContent = title;
-    $('#endScores').innerHTML = g.players.map(p =>
-      `<div class="end-score"><span>${esc(p.name)}</span><b>${p.score}</b><small>${p.ok} uhodnuto</small></div>`).join('');
+    $('#endIcon').innerHTML = I(icon);
+    const best = Math.max(...g.players.map(p => p.score));
+    $('#endScores').innerHTML = g.players.map((p, i) => {
+      const win = g.players.length > 1 && !tie && p.score === best;
+      return `<div class="end-score${win ? ' win' : ''}">${win ? `<span class="crown">${I('crown')}</span>` : ''}` +
+        `<span>${g.players.length > 1 ? `<i class="pdot" style="display:inline-block;width:9px;height:9px;border-radius:50%;background:${PLAYER_COLORS[i]};margin-right:6px"></i>` : ''}${esc(p.name)}</span>` +
+        `<b>${p.score}</b><small>${p.ok} uhodnuto</small></div>`;
+    }).join('');
     $('#endList').innerHTML = g.history.map(h =>
-      `<li class="${h.ok ? 'ok' : 'bad'}"><span>${h.ok ? '✅' : '❌'} ${esc(cap(h.item.name))}</span>` +
-      `<span>${g.players.length > 1 ? esc(h.player) + ' · ' : ''}${h.pts} b.</span></li>`).join('');
+      `<li class="${h.ok ? 'ok' : 'bad'}">${I(h.ok ? 'circle-check' : 'circle-x')}<img class="thumb" src="${esc(h.item.thumb || h.item.img)}" alt="">` +
+      `<span class="nm">${esc(cap(h.item.name))}${g.players.length > 1 ? ` <small class="muted">· ${esc(h.player)}</small>` : ''}</span>` +
+      `<span class="pt">${h.pts} b.</span></li>`).join('');
 
     $('#endShare').classList.toggle('hidden', !g.daily);
     if (g.daily) {
       const marks = g.history.map(h => !h.ok ? '🟥' : h.tries === 1 && !h.hints ? '🟩' : '🟨').join('');
       const score = g.players[0].score;
       const d = new Date();
-      const text = `Hádej zvířata 📅 ${d.getDate()}. ${d.getMonth() + 1}. ${d.getFullYear()}\n` +
-        `${Distort.MODES[g.daily.mode].icon} ${Distort.MODES[g.daily.mode].label}\n${marks}  ${score} b.`;
+      const text = `Hádej zvířata · denní výzva ${d.getDate()}. ${d.getMonth() + 1}. ${d.getFullYear()}\n` +
+        `Režim: ${Distort.MODES[g.daily.mode].label}\n${marks}  ${score} b.`;
       const all = store.get('daily', {});
       all[todayKey()] = { score, marks, text };
       store.set('daily', all);
@@ -666,7 +760,7 @@
     const text = $('#shareText').textContent;
     try {
       if (navigator.share) await navigator.share({ text });
-      else { await navigator.clipboard.writeText(text); toast('Zkopírováno do schránky 📋'); }
+      else { await navigator.clipboard.writeText(text); toast('Zkopírováno do schránky', 2600, null, 'copy'); }
     } catch (e) { /* zrušeno */ }
   });
 
@@ -674,7 +768,7 @@
   $('#btnStart').addEventListener('click', () => startWith(settings));
 
   function startWith(s) {
-    if (!offlinePool(s).length) { toast('Pro tento výběr nejsou žádné obrázky. Uprav skupiny.'); show('setup'); return; }
+    if (!offlinePool(s).length) { toast('Pro tento výběr nejsou žádné obrázky. Uprav skupiny.', 3000, null, 'circle-alert'); show('setup'); return; }
     newGame(s);
   }
 
@@ -683,9 +777,10 @@
     const key = todayKey();
     const done = store.get('daily', {})[key];
     if (done) {
-      $('#endTitle').textContent = '📅 Dnešní výzvu už máš';
-      $('#endScores').innerHTML = `<div class="end-score"><span>Výsledek</span><b>${done.score}</b><small>${done.marks}</small></div>`;
-      $('#endList').innerHTML = '<li>Zítra tu bude nová. 🦓</li>';
+      $('#endTitle').textContent = 'Dnešní výzvu už máš';
+      $('#endIcon').innerHTML = I('calendar-days');
+      $('#endScores').innerHTML = `<div class="end-score"><span>Tvůj výsledek</span><b>${done.score}</b><small>${done.marks}</small></div>`;
+      $('#endList').innerHTML = `<li>${I('clock')}<span class="nm">Zítra tu bude nová výzva.</span></li>`;
       $('#shareText').textContent = done.text || '';
       $('#endShare').classList.remove('hidden');
       $('#endOverlay').classList.remove('hidden');
@@ -744,13 +839,13 @@
       list = Object.entries(col).filter(([id]) => !BY_ID.has(id)).map(([id, c]) => ({ id, ...c, online: true }));
       have = list.length;
       $('#colProgress').innerHTML = have
-        ? `🌐 Z internetu jsi uhodl/a už <b>${have}</b> ${have === 1 ? 'položku' : have < 5 ? 'položky' : 'položek'}.`
-        : 'Zatím nic. Zapni v nastavení „Hledat i z internetu“.';
+        ? `<span><b>${have}</b> ${have === 1 ? 'zvíře' : have < 5 ? 'zvířata' : 'zvířat'} uhodnutých z internetu</span>`
+        : `<span>Zatím nic. Zapni v nastavení „Zvířata i z internetu“ a hraj s připojením.</span>`;
     } else {
       list = ALL_ITEMS.filter(i => i.theme === colTab && i.img && !i.online);
       have = list.filter(i => col[i.id]).length;
       const pct = list.length ? Math.round(have / list.length * 100) : 0;
-      $('#colProgress').innerHTML = `<div class="bar"><span style="width:${pct}%"></span></div><b>${have}</b> / ${list.length} objeveno`;
+      $('#colProgress').innerHTML = `<span><b>${have}</b> z ${list.length} objeveno · ${pct} %</span><div class="bar"><span style="width:${pct}%"></span></div>`;
     }
     const frag = document.createDocumentFragment();
     list.forEach(it => {
@@ -759,15 +854,17 @@
       d.className = 'col-item' + (got ? '' : ' locked');
       if (got) {
         const src = it.thumb || it.img;
-        d.innerHTML = `<img loading="lazy" src="${esc(src)}" alt=""><span>${esc(cap(it.name))}</span>`;
+        d.innerHTML = `<div class="ph"><img loading="lazy" src="${esc(src)}" alt=""></div><span>${esc(cap(it.name))}</span>`;
         d.onclick = () => openDetail(it, col[it.id]);
       } else {
-        d.innerHTML = `<div class="q">?</div><span>${'•'.repeat(Math.min(8, it.name.length))}</span>`;
-        d.onclick = () => toast('Tohle zvíře nebo místo ještě musíš uhodnout. 😉');
+        d.innerHTML = `<div class="ph"><img loading="lazy" src="${esc(it.img)}" alt=""></div><div class="lock">${I('lock')}</div>` +
+          `<span>${'•'.repeat(Math.min(7, it.name.length))}</span>`;
+        d.onclick = () => toast('Tohle ještě musíš uhodnout ve hře.', 2600, null, 'lock');
       }
       frag.appendChild(d);
     });
     grid.appendChild(frag);
+    if (!list.length) grid.innerHTML = `<div class="empty" style="grid-column:1/-1">${I('globe')}Tady se objeví zvířata, která uhodneš z internetu.</div>`;
   }
 
   function openDetail(it, c) {
@@ -775,10 +872,11 @@
     $('#detailName').textContent = cap(it.name);
     $('#detailSci').innerHTML = it.sci ? `<i>${esc(it.sci)}</i>` : esc(it.country || '');
     const info = [];
-    if (it.region) info.push(`🌍 ${esc(it.region)}`);
-    if (it.hint) info.push(esc(it.hint));
-    if (c) info.push(`Uhodnuto ${c.n}× · poprvé ${c.d.split('-').reverse().join('. ')}`);
-    $('#detailInfo').innerHTML = info.join('<br>');
+    if (it.region) info.push(['map-pin', esc(it.region)]);
+    if (it.country) info.push(['map-pin', `${esc(it.country)} · ${esc(it.continent || '')}`]);
+    if (it.hint) info.push(['book-open', esc(it.hint)]);
+    if (c) info.push(['trophy', `Uhodnuto ${c.n}× · poprvé ${c.d.split('-').reverse().map(Number).join('. ')}`]);
+    $('#detailInfo').innerHTML = info.map(([ic, t]) => `<div>${I(ic)}<span>${t}</span></div>`).join('');
     $('#detailCredit').innerHTML = creditHtml(it);
     $('#detailOverlay').classList.remove('hidden');
   }
@@ -789,30 +887,31 @@
     const col = store.get('collection', {});
     const r = st.rounds || 0, c = st.correct || 0;
     const acc = r ? Math.round(c / r * 100) : 0;
-    const tile = (v, l) => `<div class="tile"><b>${v}</b><span>${l}</span></div>`;
+    const tile = (ic, cls, v, l) => `<div class="tile"><span class="tile-ic ${cls}">${I(ic)}</span><b>${v}</b><span>${l}</span></div>`;
     let html = `<div class="tiles">
-      ${tile(st.games || 0, 'odehraných her')}
-      ${tile(r, 'kol')}
-      ${tile(acc + ' %', 'úspěšnost')}
-      ${tile(st.bestStreak || 0, 'nejdelší série')}
-      ${tile(st.firstTry || 0, 'na 1. pokus')}
-      ${tile(st.best || 0, 'nejlepší hra (b.)')}
-      ${tile(st.points || 0, 'bodů celkem')}
-      ${tile(Object.keys(col).length, 've sbírce')}
+      ${tile('target', 'green', acc + ' %', 'úspěšnost')}
+      ${tile('flame', '', st.bestStreak || 0, 'nejdelší série')}
+      ${tile('zap', 'blue', st.firstTry || 0, 'na první pokus')}
+      ${tile('award', 'violet', st.best || 0, 'nejlepší hra (body)')}
+      ${tile('flag', 'green', st.games || 0, 'odehraných her')}
+      ${tile('image', 'blue', r, 'odehraných kol')}
+      ${tile('star', '', st.points || 0, 'bodů celkem')}
+      ${tile('paw-print', 'violet', Object.keys(col).length, 've sbírce')}
     </div>`;
     const modes = Object.entries(st.byMode || {});
     if (modes.length) {
-      html += '<h3>Úspěšnost podle režimu</h3><div class="bars">' + modes.map(([m, v]) => {
+      html += '<section class="card"><h3 class="card-h">Úspěšnost podle režimu</h3><div class="bars">' + modes.map(([m, v]) => {
         const p = Math.round(v.c / v.r * 100);
-        return `<div class="barrow"><span>${Distort.MODES[m] ? Distort.MODES[m].icon + ' ' + Distort.MODES[m].label : m}</span><div class="bar"><span style="width:${p}%"></span></div><b>${p} %</b></div>`;
-      }).join('') + '</div>';
+        const M = Distort.MODES[m];
+        return `<div class="barrow"><span>${M ? I(M.icon) + M.label : m}</span><div class="bar"><span style="width:${p}%"></span></div><b>${p} %</b></div>`;
+      }).join('') + '</div></section>';
     }
     const hard = Object.values(st.items || {}).filter(i => i.r - i.c > 0).sort((a, b) => (b.r - b.c) - (a.r - a.c)).slice(0, 8);
     if (hard.length) {
-      html += '<h3>Nejvíc tě potrápilo</h3><ul class="hard">' +
-        hard.map(i => `<li><span>${esc(cap(i.n))}</span><small>${i.r - i.c}× neuhodnuto</small></li>`).join('') + '</ul>';
+      html += '<section class="card"><h3 class="card-h">Nejvíc tě potrápilo</h3><ul class="hard">' +
+        hard.map(i => `<li><span>${esc(cap(i.n))}</span><small>${i.r - i.c}× neuhodnuto</small></li>`).join('') + '</ul></section>';
     }
-    if (!r) html += '<p class="empty">Zatím žádné hry. Hurá do hraní! 🦓</p>';
+    if (!r) html = `<div class="empty">${I('chart-column')}Zatím žádné hry. Zahraj si a statistiky se tu objeví.</div>`;
     $('#statsBody').innerHTML = html;
   }
 
@@ -831,13 +930,13 @@
   $('#btnReset').addEventListener('click', () => {
     if (!confirm('Opravdu smazat sbírku, statistiky a denní výzvy?')) return;
     ['stats', 'collection', 'daily', 'recent'].forEach(k => localStorage.removeItem('hz.' + k));
-    toast('Smazáno.');
+    toast('Smazáno.', 2600, null, 'check');
   });
 
   // ------------------------------------------------------------ offline: stažení obrázků
   async function precacheImages() {
     const pill = $('#offlineStatus');
-    if (!('caches' in window)) { pill.textContent = ''; return; }
+    if (!('caches' in window)) { pill.innerHTML = ''; return; }
     // fotky v aplikaci i fotky míst z Wikimedia Commons (ty se stáhnou do telefonu při prvním spuštění)
     const urls = [...new Set(ALL_ITEMS.filter(i => i.img && !i.online).map(i => new URL(i.img, location.href).href))];
     const cache = await caches.open(IMG_CACHE);
@@ -847,8 +946,11 @@
     const total = urls.length;
     const update = () => {
       const done = total - missing.length;
-      pill.textContent = done >= total ? `📦 Offline připraveno (${total})` : `📥 Stahuji pro offline ${done}/${total}`;
-      pill.classList.toggle('ready', done >= total);
+      const ready = done >= total;
+      pill.innerHTML = ready
+        ? `${I('circle-check')}<span>Připraveno i bez internetu · ${total} fotek</span>`
+        : `${I('download')}<span>Ukládám fotky do telefonu</span><div class="bar"><span style="width:${Math.round(done / total * 100)}%"></span></div><span>${done}/${total}</span>`;
+      pill.classList.toggle('loading-state', !ready);
     };
     update();
     if (!missing.length || !Online.isOnline()) return;
@@ -889,7 +991,7 @@
     const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
     toast(ios
       ? 'V Safari klepni na <b>Sdílet</b> (čtvereček se šipkou) a pak na <b>Přidat na plochu</b>.'
-      : 'V menu prohlížeče (⋮) zvol <b>Přidat na plochu</b> nebo <b>Nainstalovat aplikaci</b>.', 8000);
+      : 'V menu prohlížeče (⋮) zvol <b>Přidat na plochu</b> nebo <b>Nainstalovat aplikaci</b>.', 8000, null, 'smartphone');
   });
   window.addEventListener('appinstalled', () => $('#btnInstall').classList.add('hidden'));
 
@@ -899,7 +1001,7 @@
         const nw = reg.installing;
         nw && nw.addEventListener('statechange', () => {
           if (nw.state === 'installed' && navigator.serviceWorker.controller) {
-            toast('✨ Je k dispozici nová verze. Klepni sem pro obnovení.', 0, () => nw.postMessage('skipWaiting'));
+            toast('Je k dispozici nová verze. Klepni sem pro obnovení.', 0, () => nw.postMessage('skipWaiting'), 'sparkles');
           }
         });
       });

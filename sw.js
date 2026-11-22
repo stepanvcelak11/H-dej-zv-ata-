@@ -1,5 +1,5 @@
 /* Service worker – aplikace funguje i bez internetu. */
-const VERSION = 'v1.0.0';
+const VERSION = 'v1.1.0';
 const SHELL_CACHE = 'hz-shell-' + VERSION;
 const IMG_CACHE = 'hz-img-v1';        // offline fotky (plní je stránka, viz app.js)
 const ONLINE_CACHE = 'hz-online-v1';  // fotky z internetu, posledních pár desítek
@@ -19,6 +19,8 @@ const SHELL = [
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/apple-touch-icon.png',
+  'fonts/nunito-latin-wght-normal.woff2',
+  'fonts/nunito-latin-ext-wght-normal.woff2',
 ];
 
 self.addEventListener('install', e => {

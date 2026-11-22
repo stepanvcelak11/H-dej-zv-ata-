@@ -38,7 +38,9 @@ Bez build kroku, čisté HTML/CSS/JS. Lokálně stačí `python3 -m http.server`
 - `tools/animals.txt`, `tools/landmarks.txt`: seznam zvířat a míst (jména, synonyma, nápovědy)
 - `tools/landmark_overrides.txt`: náhradní fotky míst, kde hlavní obrázek článku na Wikipedii není vhodný
 - `tools/build_data.py`: stáhne fotky (iNaturalist / Wikimedia Commons, jen licence CC) a vygeneruje `data/*.js`
-- `tools/make_icons.py`: vygeneruje ikony
+- `tools/make_icons.py`: vygeneruje ikonu aplikace
+- `tools/build_icons.py`: vloží do `index.html` sadu ikon [Lucide](https://lucide.dev) (ISC)
+- `fonts/`: písmo Nunito (OFL), licence jsou ve složce `licenses/`
 - Po změně souborů aplikace zvyš `VERSION` v `sw.js`, aby se telefonům stáhla nová verze
 
 Fotky: autoři a licence jsou uvedeny v aplikaci (Jak hrát → Autoři fotek) a v `data/*.js`.

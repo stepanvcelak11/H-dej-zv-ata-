@@ -28,14 +28,14 @@
   }
 
   const MODES = {
-    zoom:    { label: 'Přiblížení', icon: '🔍', desc: 'Uvidíš jen malý výřez, třeba jen proužky nebo skvrny.' },
-    blur:    { label: 'Rozmazání', icon: '🌫️', desc: 'Celý obrázek, ale hodně rozmazaný.' },
-    pixel:   { label: 'Pixely', icon: '🟪', desc: 'Obrázek složený z velkých čtverečků.' },
-    tiles:   { label: 'Okénka', icon: '⬛', desc: 'Část políček je zakrytá černou.' },
-    reveal:  { label: 'Odkrývání', icon: '⏳', desc: 'Políčka se postupně odkrývají. Čím dřív uhodneš, tím víc bodů.' },
-    shuffle: { label: 'Puzzle', icon: '🧩', desc: 'Obrázek je rozstříhaný a přeházený.' },
-    mix:     { label: 'Mix', icon: '🌀', desc: 'Přiblížení a rozmazání najednou. Pro experty.' },
-    random:  { label: 'Náhodně', icon: '🎲', desc: 'Každé kolo jiný režim.' },
+    zoom:    { label: 'Přiblížení', icon: 'search', desc: 'Uvidíš jen malý výřez, třeba jen proužky nebo skvrny.' },
+    blur:    { label: 'Rozmazání', icon: 'droplets', desc: 'Celý obrázek, ale hodně rozmazaný.' },
+    pixel:   { label: 'Pixely', icon: 'grid-3x3', desc: 'Obrázek složený z velkých čtverečků.' },
+    tiles:   { label: 'Okénka', icon: 'layout-grid', desc: 'Část políček je zakrytá černou.' },
+    reveal:  { label: 'Odkrývání', icon: 'hourglass', desc: 'Políčka se postupně odkrývají. Čím dřív uhodneš, tím víc bodů.' },
+    shuffle: { label: 'Puzzle', icon: 'puzzle', desc: 'Obrázek je rozstříhaný a přeházený.' },
+    mix:     { label: 'Mix', icon: 'blend', desc: 'Přiblížení a rozmazání najednou. Pro experty.' },
+    random:  { label: 'Náhodně', icon: 'dices', desc: 'Každé kolo jiný režim.' },
   };
   const PLAYABLE = ['zoom', 'blur', 'pixel', 'tiles', 'reveal', 'shuffle', 'mix'];
 
