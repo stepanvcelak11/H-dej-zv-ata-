@@ -94,7 +94,6 @@ Bagan|bagan|Bagan|Myanmar|Asie|stavba|Pláň s tisíci buddhistickými chrámy.|
 Borobudur|borobudur|Borobudur|Indonésie|Asie|stavba|Největší buddhistický chrám na světě.|1
 Fušimi Inari|fushimi inari|Fushimi Inari-taisha|Japonsko|Asie|stavba|Svatyně s tisíci oranžovými branami.|1
 Itsukušima|plovoucí brána;itsukushima|Itsukushima Shrine|Japonsko|Asie|stavba|Červená brána torii stojící v moři.|1
-Taipei 101|taipei 101|Taipei 101|Tchaj-wan|Asie|stavba|Mrakodrap tvarem připomínající bambus.|1
 Persepolis|persepolis|Persepolis|Írán|Asie|stavba|Ruiny hlavního města perské říše.|1
 Registán|registan;samarkand|Registan|Uzbekistán|Asie|stavba|Náměstí obklopené modrými medresami.|1
 Bajkal|jezero bajkal|Lake Baikal|Rusko|Asie|příroda|Nejhlubší jezero světa.|1

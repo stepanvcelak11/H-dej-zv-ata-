@@ -71,9 +71,10 @@ self.addEventListener('fetch', e => {
   // fotky z internetu (iNaturalist, Wikimedia): z cache, jinak stáhnout a uložit
   if (req.destination === 'image') {
     e.respondWith((async () => {
-      const c = await caches.open(ONLINE_CACHE);
-      const hit = await c.match(req);
+      // fotky míst uložené při prvním spuštění (hz-img-v1) nebo dříve hrané online fotky
+      const hit = await caches.match(req.url);
       if (hit) return hit;
+      const c = await caches.open(ONLINE_CACHE);
       const res = await fetch(req);
       if (res.ok || res.type === 'opaque') {
         c.put(req, res.clone()).then(() => trim(ONLINE_CACHE, ONLINE_MAX));

@@ -2854,9 +2854,9 @@ window.DATA_ANIMALS = [
 "diet": "m",
 "hint": "Mláďata nosí samec.",
 "img": "img/a/konicek-morsky.jpg",
-"credit": "(c) lcolmer, some rights reserved (CC BY-NC), uploaded by lcolmer",
+"credit": "(c) 104623964081378888743, some rights reserved (CC BY-NC), uploaded by 104623964081378888743",
 "license": "cc-by-nc",
-"source": "https://www.inaturalist.org/photos/88125644",
+"source": "https://www.inaturalist.org/photos/452542",
 "inat": 84970
 },
 {
@@ -2993,9 +2993,9 @@ window.DATA_ANIMALS = [
 "diet": "m",
 "hint": "Největší sladkovodní ryba Evropy s dlouhými vousy.",
 "img": "img/a/sumec-velky.jpg",
-"credit": "(c) Manuel Raab, some rights reserved (CC BY-NC), uploaded by Manuel Raab",
+"credit": "(c) cleeb, some rights reserved (CC BY-NC), uploaded by cleeb",
 "license": "cc-by-nc",
-"source": "https://www.inaturalist.org/photos/215559806",
+"source": "https://www.inaturalist.org/photos/102955453",
 "inat": 112581
 },
 {
@@ -3433,9 +3433,9 @@ window.DATA_ANIMALS = [
 "diet": "m",
 "hint": "Živoucí fosilie se spirálovitou ulitou.",
 "img": "img/a/lodenka-hlubinna.jpg",
-"credit": "(c) Dhugal Lindsay, some rights reserved (CC BY-NC), uploaded by Dhugal Lindsay",
+"credit": "(c) Glen Whisson, some rights reserved (CC BY-NC), uploaded by Glen Whisson",
 "license": "cc-by-nc",
-"source": "https://www.inaturalist.org/photos/467149038",
+"source": "https://www.inaturalist.org/photos/528405042",
 "inat": 123467
 },
 {

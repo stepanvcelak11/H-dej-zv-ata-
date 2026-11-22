@@ -48,7 +48,7 @@ def get(url, binary=False, tries=8):
                 data = r.read()
             return data if binary else json.loads(data)
         except Exception as e:  # noqa
-            wait = 15 * (i + 1)
+            wait = 30 * (i + 1)
             print(f"   ! {e} ({url[:90]}) – zkusím znovu za {wait}s", flush=True)
             time.sleep(wait)
     raise RuntimeError("nepodařilo se stáhnout " + url)
@@ -165,78 +165,135 @@ def build_animals():
 
 
 # ---------------------------------------------------------------- památky
-def wiki_image(title):
-    key = "wiki:" + title
+def wiki_batch(titles):
+    """Zjistí obrázky a licence pro všechna místa hromadně (po 50), ať nás Wikimedia neblokuje."""
+    missing = [t for t in titles if "wiki:" + t not in CACHE]
+    for i in range(0, len(missing), 50):
+        chunk = missing[i:i + 50]
+        d = get("https://en.wikipedia.org/w/api.php?action=query&format=json&redirects=1&pilimit=50"
+                "&prop=pageimages&piprop=thumbnail|name&pithumbsize=960&titles="
+                + urllib.parse.quote("|".join(chunk)))
+        time.sleep(3)
+        q = d["query"]
+        back = {}
+        for m in q.get("normalized", []) + q.get("redirects", []):
+            back[m["to"]] = back.get(m["from"], m["from"])
+        pages = {}
+        for p in q["pages"].values():
+            orig = p.get("title")
+            while orig in back:
+                orig = back[orig]
+            pages[orig] = p
+        files = {}
+        for t in chunk:
+            p = pages.get(t)
+            if p and "thumbnail" in p:
+                files[t] = p
+            else:
+                CACHE["wiki:" + t] = None
+                print("   ✗ bez obrázku:", t)
+        names = ["File:" + p["pageimage"] for p in files.values()]
+        meta = {}
+        for j in range(0, len(names), 50):
+            m = get("https://commons.wikimedia.org/w/api.php?action=query&format=json&prop=imageinfo"
+                    "&iiprop=extmetadata&titles=" + urllib.parse.quote("|".join(names[j:j + 50])))
+            time.sleep(3)
+            norm = {x["to"]: x["from"] for x in m["query"].get("normalized", [])}
+            for p in m["query"]["pages"].values():
+                meta[norm.get(p["title"], p["title"])] = (p.get("imageinfo") or [{}])[0].get("extmetadata", {})
+
+        def mv(md, k):
+            v = md.get(k, {}).get("value", "")
+            return re.sub(r"<[^>]+>", "", v).strip()
+
+        for t, p in files.items():
+            md = meta.get("File:" + p["pageimage"], {})
+            url = p["thumbnail"]["source"].split("?")[0].replace("//thumb.wikimedia.org/", "//upload.wikimedia.org/")
+            url = re.sub(r"/\d+px-", "/960px-", url)
+            CACHE["wiki:" + t] = {
+                "thumb": url,
+                "file": p["pageimage"],
+                "artist": mv(md, "Artist") or "neznámý autor",
+                "license": mv(md, "LicenseShortName") or "viz zdroj",
+            }
+        save_cache()
+
+
+def commons_search(query):
+    """Najde fotku na Wikimedia Commons podle hledaného výrazu (náhrada za nevhodný obrázek článku)."""
+    key = "commons:" + query
     if key in CACHE:
         return CACHE[key]
-    t = urllib.parse.quote(title)
-    d = get("https://en.wikipedia.org/w/api.php?action=query&format=json&redirects=1"
-            f"&prop=pageimages&piprop=thumbnail|name&pithumbsize=960&titles={t}")
+    d = get("https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search"
+            "&gsrnamespace=6&gsrlimit=8&prop=imageinfo&iiprop=url|extmetadata|mime&iiurlwidth=960&gsrsearch="
+            + urllib.parse.quote(query + " filetype:bitmap"))
     time.sleep(3)
-    page = next(iter(d["query"]["pages"].values()))
-    if "thumbnail" not in page:
-        CACHE[key] = None
-        return None
-    fname = page["pageimage"]
-    m = get("https://commons.wikimedia.org/w/api.php?action=query&format=json&prop=imageinfo"
-            "&iiprop=extmetadata&titles=" + urllib.parse.quote("File:" + fname))
-    time.sleep(3)
-    meta = {}
-    for p in m.get("query", {}).get("pages", {}).values():
-        meta = (p.get("imageinfo") or [{}])[0].get("extmetadata", {})
-
-    def mv(k):
-        v = meta.get(k, {}).get("value", "")
-        return re.sub(r"<[^>]+>", "", v).strip()
-
-    info = {
-        "thumb": page["thumbnail"]["source"],
-        "file": fname,
-        "artist": mv("Artist") or "neznámý autor",
-        "license": mv("LicenseShortName") or "viz zdroj",
-    }
-    CACHE[key] = info
-    save_cache()
-    return info
+    pages = sorted(d.get("query", {}).get("pages", {}).values(), key=lambda p: p.get("index", 99))
+    for p in pages:
+        ii = (p.get("imageinfo") or [{}])[0]
+        if ii.get("mime") != "image/jpeg" or not ii.get("thumburl"):
+            continue
+        md = ii.get("extmetadata", {})
+        mv = lambda k: re.sub(r"<[^>]+>", "", md.get(k, {}).get("value", "")).strip()
+        info = {
+            "thumb": ii["thumburl"].split("?")[0],
+            "file": p["title"].split(":", 1)[1],
+            "artist": mv("Artist") or "neznámý autor",
+            "license": mv("LicenseShortName") or "viz zdroj",
+        }
+        CACHE[key] = info
+        save_cache()
+        return info
+    return None
 
 
 def build_landmarks():
     rows = parse(os.path.join(ROOT, "tools", "landmarks.txt"), 8)
+    wiki_batch([r[2] for r in rows])
+    for wiki, query in parse(os.path.join(ROOT, "tools", "landmark_overrides.txt"), 2):
+        info = commons_search(query)
+        print(f"   ↻ {wiki}: {info and info['file']}")
+        if info:
+            CACHE["wiki:" + wiki] = info
+            sid = next((slug(r[0]) for r in rows if r[2] == wiki), None)
+            if sid and os.path.exists(os.path.join(ROOT, f"img/l/{sid}.jpg")):
+                os.remove(os.path.join(ROOT, f"img/l/{sid}.jpg"))
+    save_cache()
     out, seen = [], set()
+    local_ok = remote = 0
     for n, (name, alts, wiki, country, cont, kind, hint, online) in enumerate(rows, 1):
         sid = slug(name)
         assert sid not in seen, "duplicitní místo " + name
         seen.add(sid)
-        item = {
-            "id": sid, "name": name, "alts": [a for a in alts.split(";") if a],
-            "wiki": wiki, "country": country, "continent": cont, "kind": kind, "hint": hint,
-        }
-        if online == "1":
-            item["online"] = True
-            out.append(item)
-            continue
-        print(f"[{n}/{len(rows)}] {name} ({wiki})", flush=True)
-        info = wiki_image(wiki)
+        info = CACHE.get("wiki:" + wiki)
         if not info:
-            print("   ✗ bez obrázku – bude jen online")
-            item["online"] = True
-            out.append(item)
             continue
         rel = f"img/l/{sid}.jpg"
         path = os.path.join(ROOT, rel)
-        if not os.path.exists(path):
-            url = info["thumb"].split("?")[0].replace("//thumb.wikimedia.org/", "//upload.wikimedia.org/")
-            url = re.sub(r"/\d+px-", "/960px-", url)
-            size = save_image(get(url, binary=True, tries=6), path)
-            time.sleep(2)
-            print(f"   ✓ {size[0]}×{size[1]}  {info['license']}")
-        item.update({
-            "img": rel,
+        # pokusí se fotku uložit přímo do aplikace; když Wikimedia nedovolí,
+        # aplikace si ji stáhne sama při prvním spuštění na telefonu
+        if not os.path.exists(path) and online != "1" and "--download" in sys.argv:
+            try:
+                save_image(get(info["thumb"], binary=True, tries=1), path)
+                time.sleep(2)
+            except Exception:
+                pass
+        info["thumb"] = info["thumb"].split("?")[0].replace("//thumb.wikimedia.org/", "//upload.wikimedia.org/")
+        if os.path.exists(path):
+            img = rel
+            local_ok += 1
+        else:
+            img = info["thumb"]
+            remote += 1
+        out.append({
+            "id": sid, "name": name, "alts": [a for a in alts.split(";") if a],
+            "wiki": wiki, "country": country, "continent": cont, "kind": kind, "hint": hint,
+            "img": img,
             "credit": info["artist"],
             "license": info["license"],
             "source": "https://commons.wikimedia.org/wiki/File:" + urllib.parse.quote(info["file"]),
         })
-        out.append(item)
+    print(f"místa: {local_ok} fotek v aplikaci, {remote} se stáhne do telefonu při prvním spuštění")
     write_js("landmarks", out)
 
 

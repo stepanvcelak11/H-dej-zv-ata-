@@ -210,7 +210,11 @@
     }
     return false;
   }
-  const offlinePool = s => ALL_ITEMS.filter(it => it.img && !it.online && matchesFilter(it, s));
+  // fotky z internetu (místa z Wikimedia), které už jsou uložené v telefonu
+  const readyRemote = new Set();
+  const isRemote = it => /^https?:/.test(it.img);
+  const usable = it => !isRemote(it) || Online.isOnline() || readyRemote.has(it.img);
+  const offlinePool = s => ALL_ITEMS.filter(it => it.img && !it.online && matchesFilter(it, s) && usable(it));
   const onlineLandmarks = s => LANDMARKS.filter(it => it.online && matchesFilter(it, s));
 
   function pickOffline(s, used) {
@@ -813,7 +817,7 @@
   }
 
   function renderAbout() {
-    $('#versionInfo').textContent = `Verze ${VERSION} · ${ANIMALS.length} zvířat a ${LANDMARKS.filter(l => l.img).length} míst offline, ${LANDMARKS.filter(l => !l.img).length} dalších míst online`;
+    $('#versionInfo').textContent = `Verze ${VERSION} · ${ANIMALS.length} zvířat a ${LANDMARKS.length} míst offline + tisíce zvířat online`;
     const box = $('#creditsList');
     if (box.dataset.done) return;
     box.dataset.done = 1;
@@ -834,11 +838,12 @@
   async function precacheImages() {
     const pill = $('#offlineStatus');
     if (!('caches' in window)) { pill.textContent = ''; return; }
-    const urls = ALL_ITEMS.filter(i => i.img && !i.online).map(i => i.img);
+    // fotky v aplikaci i fotky míst z Wikimedia Commons (ty se stáhnou do telefonu při prvním spuštění)
+    const urls = [...new Set(ALL_ITEMS.filter(i => i.img && !i.online).map(i => new URL(i.img, location.href).href))];
     const cache = await caches.open(IMG_CACHE);
-    const have = new Set((await cache.keys()).map(r => new URL(r.url).pathname));
-    const base = new URL('.', location.href).pathname;
-    let missing = urls.filter(u => !have.has(base + u));
+    const have = new Set((await cache.keys()).map(r => r.url));
+    have.forEach(u => readyRemote.add(u));
+    let missing = urls.filter(u => !have.has(u));
     const total = urls.length;
     const update = () => {
       const done = total - missing.length;
@@ -851,10 +856,16 @@
     const worker = async () => {
       while (queue.length) {
         const u = queue.shift();
-        try { await cache.add(u); missing = missing.filter(x => x !== u); update(); } catch (e) { /* zkusí příště */ }
+        try {
+          const sameOrigin = new URL(u).origin === location.origin;
+          await cache.add(new Request(u, { mode: sameOrigin ? 'same-origin' : 'cors', credentials: 'omit' }));
+          missing = missing.filter(x => x !== u);
+          readyRemote.add(u);
+          update();
+        } catch (e) { /* zkusí příště */ }
       }
     };
-    await Promise.all([worker(), worker(), worker(), worker()]);
+    await Promise.all([worker(), worker(), worker()]);
     update();
   }
 
