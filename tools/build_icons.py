@@ -12,7 +12,8 @@ ICONS = """play sliders-horizontal calendar-days paw-print chart-column info wif
 circle-x smartphone chevron-left chevron-right x lightbulb flag send arrow-right heart users user timer globe
 lock-open lock share-2 house rotate-ccw star zap award target flame sparkles search droplets grid-3x3
 layout-grid hourglass puzzle blend dices trash-2 map-pin leaf trophy check circle-help book-open camera
-microscope bird landmark crown medal circle-alert hand clock copy image eye-off""".split()
+microscope bird landmark crown medal circle-alert hand clock copy image eye-off
+image-plus images swords repeat eye list-checks pencil package map focus ban bell-ring""".split()
 
 src = sys.argv[1]
 out = []

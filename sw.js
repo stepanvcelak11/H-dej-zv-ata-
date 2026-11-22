@@ -1,5 +1,5 @@
 /* Service worker – aplikace funguje i bez internetu. */
-const VERSION = 'v1.1.0';
+const VERSION = 'v1.2.0';
 const SHELL_CACHE = 'hz-shell-' + VERSION;
 const IMG_CACHE = 'hz-img-v1';        // offline fotky (plní je stránka, viz app.js)
 const ONLINE_CACHE = 'hz-online-v1';  // fotky z internetu, posledních pár desítek
@@ -9,6 +9,8 @@ const SHELL = [
   './',
   'index.html',
   'css/app.css',
+  'js/packs.js',
+  'js/photos.js',
   'js/distort.js',
   'js/match.js',
   'js/online.js',
@@ -16,6 +18,7 @@ const SHELL = [
   'data/animals.js',
   'data/landmarks.js',
   'manifest.webmanifest',
+  'img/world.svg',
   'icons/icon-192.png',
   'icons/icon-512.png',
   'icons/apple-touch-icon.png',

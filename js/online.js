@@ -76,12 +76,12 @@
   }
 
   /** Načte (a uloží) stránku populárních druhů se jménem v češtině */
-  async function loadPage(cls, page) {
+  async function loadPage(cls, page, place) {
     const pool = lsGet(LS_POOL, {});
-    const key = cls.id + ':' + page;
+    const key = cls.id + ':' + page + (place ? '@' + place : '');
     if (pool[key] && Date.now() - pool[key].at < 14 * 864e5) return pool[key].items;
     const url = `${INAT}/taxa?rank=species&locale=cs&per_page=200&order_by=observations_count&order=desc` +
-      `&taxon_id=${cls.id}&photos=true&is_active=true&page=${page}`;
+      `&taxon_id=${cls.id}&photos=true&is_active=true&page=${page}` + (place ? `&place_id=${place}` : '');
     const d = await getJSON(url, 12000);
     const items = d.results
       .filter(t => t.preferred_common_name && t.default_photo && OK_LIC.has(t.default_photo.license_code) && !t.extinct)
@@ -99,13 +99,14 @@
    * @param {string[]} groups povolené skupiny
    * @param {Set<string>} exclude vědecké názvy a id, které nechceme
    */
-  async function randomAnimal(groups, exclude) {
+  async function randomAnimal(groups, exclude, place) {
     for (let attempt = 0; attempt < 3; attempt++) {
       const cls = pickClass(groups);
       if (!cls) return null;
       // první stránky (nejznámější druhy) mají větší šanci
-      const page = 1 + Math.floor(Math.pow(Math.random(), 1.6) * cls.pages);
-      const items = await loadPage(cls, page);
+      const pages = place ? Math.max(1, Math.ceil(cls.pages / 2)) : cls.pages;
+      const page = 1 + Math.floor(Math.pow(Math.random(), 1.6) * pages);
+      const items = await loadPage(cls, page, place);
       const ok = items.filter(i => !exclude.has(i.sci.toLowerCase()) && !exclude.has(i.id));
       if (ok.length) return ok[Math.floor(Math.random() * ok.length)];
     }
@@ -167,5 +168,14 @@
 
   function isOnline() { return navigator.onLine !== false; }
 
-  window.Online = { randomAnimal, animalDetail, landmarkImage, wikiFact, isOnline };
+  /** Adresy mapových dlaždic iNaturalistu (zoom 1 = 4 dlaždice) s místy pozorování druhu */
+  function mapTiles(taxonId) {
+    const out = [];
+    for (let y = 0; y < 2; y++) for (let x = 0; x < 2; x++) {
+      out.push({ x, y, src: `${INAT}/grid/1/${x}/${y}.png?taxon_id=${taxonId}&color=%23e8590c&opacity=0.85` });
+    }
+    return out;
+  }
+
+  window.Online = { randomAnimal, animalDetail, landmarkImage, wikiFact, isOnline, mapTiles };
 })();

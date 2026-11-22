@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '1.1.0';
+  const VERSION = '1.2.0';
   const IMG_CACHE = 'hz-img-v1';
 
   // ------------------------------------------------------------ pomocné
@@ -15,12 +15,14 @@
   const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
   const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const pick = arr => arr[Math.floor(Math.random() * arr.length)];
+  const shuffle = arr => { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
   const todayKey = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
   const sleep = ms => new Promise(r => setTimeout(r, ms));
   const withTimeout = (p, ms) => Promise.race([p, sleep(ms).then(() => { throw new Error('timeout'); })]);
   /** SVG ikona ze spritu v index.html */
   const I = (name, cls = '') => `<svg class="i ${cls}" aria-hidden="true"><use href="#i-${name}"/></svg>`;
   const PLAYER_COLORS = ['var(--p1)', 'var(--p2)'];
+  const plural = (n, one, few, many) => n === 1 ? one : (n >= 2 && n <= 4 ? few : many);
 
   let toastTimer;
   function toast(msg, ms = 2600, onClick, icon = 'info') {
@@ -37,6 +39,8 @@
   const LANDMARKS = (window.DATA_LANDMARKS || []).map(l => ({ ...l, theme: 'landmarks' }));
   const ALL_ITEMS = [...ANIMALS, ...LANDMARKS];
   const BY_ID = new Map(ALL_ITEMS.map(i => [i.id, i]));
+  const PACKS = window.PACKS || { animals: [{ id: 'all' }], landmarks: [{ id: 'all' }] };
+  const packOf = (theme, id) => (PACKS[theme] || []).find(p => p.id === id) || PACKS[theme][0];
 
   const OTHER = ['pavoukovec', 'měkkýš', 'korýš', 'bezobratlý'];
   // u každé volby je fotka typického zástupce
@@ -55,6 +59,7 @@
     { v: 'animals', label: 'Zvířata', imgs: ['zebra-stepni'] },
     { v: 'landmarks', label: 'Místa', imgs: ['koloseum'] },
     { v: 'both', label: 'Obojí', imgs: ['levhart', 'velka-cinska-zed'] },
+    { v: 'photos', label: 'Naše fotky', imgs: [] },
   ];
   const GROUP_TEXT = {
     savec: 'savec', pták: 'pták', plaz: 'plaz', obojživelník: 'obojživelník', ryba: 'ryba', hmyz: 'hmyz',
@@ -70,35 +75,48 @@
   // ------------------------------------------------------------ nastavení
   const DEFAULTS = {
     theme: 'animals', mode: 'zoom', diff: 1, groups: GROUPS.map(g => g.v), continents: CONTINENTS.map(c => c.v),
-    players: 1, names: ['', ''], rounds: 10, online: true, ease: true, timer: false, precise: false,
+    players: 1, names: ['', ''], rounds: 10, online: true, ease: true, timer: false, answer: 'loose',
+    packA: 'all', packL: 'all',
   };
   let settings = { ...DEFAULTS, ...store.get('settings', {}) };
+  if (settings.precise !== undefined) { if (settings.precise) settings.answer = 'precise'; delete settings.precise; }
   const saveSettings = () => store.set('settings', settings);
+  const isDuel = s => s.players === 'duel';
+
+  // vlastní fotky (načtené z IndexedDB)
+  let photoList = [];
+  async function refreshPhotos() {
+    try { photoList = await Photos.all(); } catch (e) { photoList = []; }
+    return photoList;
+  }
 
   // ------------------------------------------------------------ navigace
   function show(id) {
     $$('.screen').forEach(s => s.classList.toggle('active', s.id === id));
     if (id === 'home') renderHome();
-    if (id === 'setup') renderSetup();
+    if (id === 'setup') { renderSetup(); refreshPhotos().then(() => { if ($('#setup').classList.contains('active')) renderSetup(); }); }
     if (id === 'collection') renderCollection();
     if (id === 'stats') renderStats();
     if (id === 'about') renderAbout();
+    if (id === 'photos') renderPhotos();
     window.scrollTo(0, 0);
   }
   $$('[data-go]').forEach(b => b.addEventListener('click', () => show(b.dataset.go)));
 
   // ------------------------------------------------------------ domovská obrazovka
   function summaryHtml(s) {
-    const theme = { animals: ['paw-print', 'Zvířata'], landmarks: ['landmark', 'Místa'], both: ['globe', 'Zvířata i místa'] }[s.theme];
+    const theme = {
+      animals: ['paw-print', 'Zvířata'], landmarks: ['landmark', 'Místa'], both: ['globe', 'Zvířata i místa'], photos: ['images', 'Naše fotky'],
+    }[s.theme] || ['paw-print', 'Zvířata'];
     const m = Distort.MODES[s.mode];
-    const tags = [
-      [theme[0], theme[1]],
-      [m.icon, m.label],
-      ['target', Distort.DIFFICULTY[s.diff].label],
-      ['flag', s.rounds ? `${s.rounds} kol` : 'bez konce'],
-    ];
-    if (s.precise && s.theme !== 'landmarks') tags.push(['microscope', 's druhem']);
-    if (s.players === 2) tags.push(['users', 've dvou']);
+    const tags = [[theme[0], theme[1]]];
+    if (s.theme === 'animals' && s.packA !== 'all') tags[0][1] = packOf('animals', s.packA).label;
+    if (s.theme === 'landmarks' && s.packL !== 'all') tags[0][1] = packOf('landmarks', s.packL).label;
+    tags.push([m.icon, m.label], ['target', Distort.DIFFICULTY[s.diff].label], ['flag', s.rounds ? `${s.rounds} kol` : 'bez konce']);
+    if (s.theme !== 'photos' && s.answer === 'choice') tags.push(['list-checks', 'ze 4 možností']);
+    if (s.theme !== 'photos' && s.answer === 'precise' && s.theme !== 'landmarks') tags.push(['microscope', 's druhem']);
+    if (s.players === 2) tags.push(['repeat', 'střídání']);
+    if (isDuel(s)) tags.push(['swords', 'souboj']);
     return tags.map(([ic, t]) => `<span>${I(ic)}${esc(t)}</span>`).join('');
   }
 
@@ -134,6 +152,14 @@
     $('#statsBadge').textContent = st.rounds ? `${Math.round((st.correct || 0) / st.rounds * 100)} % uhodnuto` : 'zatím prázdné';
     updateNet();
     heroNext();
+    refreshPhotos().then(list => {
+      $('#photosBadge').textContent = list.length
+        ? `${list.length} ${plural(list.length, 'fotka', 'fotky', 'fotek')} · hádejte svoje vlastní fotky`
+        : 'Nahrajte svoje fotky a hádejte je';
+      $('#photoStack').innerHTML = list.length
+        ? list.slice(0, 3).map(p => `<img src="${Photos.thumbUrl(p)}" alt="">`).join('')
+        : `<span class="ps-empty">${I('image-plus')}</span>`;
+    });
   }
 
   function updateNet() {
@@ -171,29 +197,64 @@
   }
 
   function renderSetup() {
+    const s = settings;
+    const photosTheme = s.theme === 'photos';
+
+    // témata
     const themes = $('#optTheme');
     themes.innerHTML = '';
     THEMES.forEach(t => {
       const b = document.createElement('button');
-      b.className = 'theme' + (settings.theme === t.v ? ' on' : '');
-      b.innerHTML = `<span class="ti">${t.imgs.map(id => `<img src="${esc(imgOf(id))}" alt="">`).join('')}</span>` +
-        `<b>${t.label}</b><span class="check">${I('check')}</span>`;
+      b.className = 'theme' + (s.theme === t.v ? ' on' : '');
+      let imgs = t.imgs.map(id => `<img src="${esc(imgOf(id))}" alt="">`).join('');
+      if (t.v === 'photos') {
+        imgs = photoList.length
+          ? photoList.slice(0, 2).map(p => `<img src="${Photos.thumbUrl(p)}" alt="">`).join('')
+          : `<span class="theme-ph">${I('images')}</span>`;
+      }
+      b.innerHTML = `<span class="ti">${imgs}</span><b>${t.label}</b><span class="check">${I('check')}</span>`;
       b.onclick = () => { settings.theme = t.v; saveSettings(); renderSetup(); };
       themes.appendChild(b);
     });
 
+    // balíčky
+    const packTheme = s.theme === 'animals' ? 'animals' : s.theme === 'landmarks' ? 'landmarks' : null;
+    $('#fieldPack').classList.toggle('hidden', !packTheme);
+    if (packTheme) {
+      const key = packTheme === 'animals' ? 'packA' : 'packL';
+      const box = $('#optPack');
+      const scroll = box.scrollLeft;
+      box.innerHTML = '';
+      PACKS[packTheme].forEach(p => {
+        const n = ALL_ITEMS.filter(it => it.theme === packTheme && it.img && inPack(it, packTheme, p.id)).length;
+        const b = document.createElement('button');
+        b.className = 'pack' + (s[key] === p.id ? ' on' : '');
+        b.innerHTML = `<span class="pk-img"><img src="${esc(imgOf(p.img))}" alt=""><span class="pk-n">${n}</span></span>` +
+          `<span class="pk-t"><b>${esc(p.label)}</b><small>${esc(p.desc || '')}</small></span>`;
+        b.onclick = () => { settings[key] = p.id; saveSettings(); renderSetup(); };
+        box.appendChild(b);
+      });
+      const on = box.querySelector('.pack.on');
+      // při prvním zobrazení posunout na vybraný balíček, jinak zachovat polohu
+      box.scrollLeft = scroll || (on ? Math.max(0, on.offsetLeft - 16) : 0);
+    }
+
+    $('#fieldPhotos').classList.toggle('hidden', !photosTheme);
+    $('#photosCount').textContent = `${photoList.length} ${plural(photoList.length, 'fotka', 'fotky', 'fotek')}`;
+
+    // režimy
     const modes = $('#optMode');
     modes.innerHTML = '';
     Object.entries(Distort.MODES).forEach(([k, m]) => {
       const b = document.createElement('button');
-      b.className = 'mode' + (settings.mode === k ? ' on' : '');
+      b.className = 'mode' + (s.mode === k ? ' on' : '');
       b.dataset.mode = k;
       b.innerHTML = (k === 'random' ? `<div class="mode-dice">${I('dices')}</div>` : '<canvas width="160" height="160"></canvas>') +
         `<span>${m.label}</span>`;
       b.onclick = () => { settings.mode = k; saveSettings(); renderSetup(); };
       modes.appendChild(b);
     });
-    $('#modeDesc').textContent = Distort.MODES[settings.mode].desc;
+    $('#modeDesc').textContent = Distort.MODES[s.mode].desc;
 
     const diff = $('#optDiff');
     diff.innerHTML = '';
@@ -203,33 +264,51 @@
       b.innerHTML = `<span class="lvl">${[0, 1, 2, 3].map(j => `<i class="${j <= i ? 'f' : ''}"></i>`).join('')}</span>${d.label}`;
       diff.appendChild(b);
     });
-    seg('#optDiff', settings.diff, v => { settings.diff = +v; saveSettings(); renderSetup(); });
-    $('#diffDesc').textContent = `Body ×${String(Distort.DIFFICULTY[settings.diff].mult).replace('.', ',')}`;
+    seg('#optDiff', s.diff, v => { settings.diff = +v; saveSettings(); renderSetup(); });
+    $('#diffDesc').textContent = `Body ×${String(Distort.DIFFICULTY[s.diff].mult).replace('.', ',')}`;
 
-    seg('#optPrecise', settings.precise ? 1 : 0, v => { settings.precise = v === '1'; saveSettings(); renderSetup(); });
-    $('#fieldPrecise').classList.toggle('hidden', settings.theme === 'landmarks');
-    $('#fieldGroups').classList.toggle('hidden', settings.theme === 'landmarks');
-    $('#fieldContinents').classList.toggle('hidden', settings.theme === 'animals');
-    chips('#optGroups', GROUPS, settings.groups, v => { settings.groups = v; saveSettings(); renderSetup(); });
-    chips('#optContinents', CONTINENTS, settings.continents, v => { settings.continents = v; saveSettings(); renderSetup(); });
-    $('#groupsCount').textContent = `${settings.groups.length} z ${GROUPS.length}`;
-    $('#contCount').textContent = `${settings.continents.length} z ${CONTINENTS.length}`;
+    // odpovídání
+    $('#fieldAnswer').classList.toggle('hidden', photosTheme);
+    const onlyPlaces = s.theme === 'landmarks';
+    $('#ansPrecise').classList.toggle('hidden', onlyPlaces);
+    $('#optAnswer').classList.toggle('two', onlyPlaces);
+    if (onlyPlaces && s.answer === 'precise') settings.answer = 'loose';
+    $('#ansLooseLabel').textContent = onlyPlaces ? 'Napsat název' : s.theme === 'both' ? 'Napsat' : 'Napsat zvíře';
+    $('#ansLooseSub').innerHTML = onlyPlaces ? '„Koloseum“' : 'stačí „sojka“';
+    seg('#optAnswer', settings.answer, v => { settings.answer = v; saveSettings(); renderSetup(); });
 
-    seg('#optPlayers', settings.players, v => { settings.players = +v; saveSettings(); renderSetup(); });
-    $('#playerNames').classList.toggle('hidden', settings.players !== 2);
-    $('#p1name').value = settings.names[0] || '';
-    $('#p2name').value = settings.names[1] || '';
+    // skupiny / kontinenty (jen bez balíčku)
+    $('#fieldGroups').classList.toggle('hidden', !(s.theme === 'both' || (s.theme === 'animals' && s.packA === 'all')));
+    $('#fieldContinents').classList.toggle('hidden', !(s.theme === 'both' || (s.theme === 'landmarks' && s.packL === 'all')));
+    chips('#optGroups', GROUPS, s.groups, v => { settings.groups = v; saveSettings(); renderSetup(); });
+    chips('#optContinents', CONTINENTS, s.continents, v => { settings.continents = v; saveSettings(); renderSetup(); });
+    $('#groupsCount').textContent = `${s.groups.length} z ${GROUPS.length}`;
+    $('#contCount').textContent = `${s.continents.length} z ${CONTINENTS.length}`;
 
-    seg('#optRounds', settings.rounds, v => { settings.rounds = +v; saveSettings(); renderSetup(); });
-    $('#roundsSub').textContent = settings.players === 2 && settings.rounds ? 'pro každého hráče' : '';
+    // hráči
+    seg('#optPlayers', s.players, v => { settings.players = v === 'duel' ? 'duel' : +v; saveSettings(); renderSetup(); });
+    $('#playerNames').classList.toggle('hidden', s.players === 1);
+    $('#playersDesc').innerHTML = {
+      1: 'Hraješ sám nebo sama.',
+      2: 'Střídáte se: každý dostane svůj obrázek a telefon si předáváte.',
+      duel: 'Oba vidíte stejný obrázek. Kdo první zmáčkne <b>Vím!</b>, odpovídá. Když se splete, má šanci ten druhý.',
+    }[s.players] || '';
+    $('#p1name').value = s.names[0] || '';
+    $('#p2name').value = s.names[1] || '';
 
-    $('#optOnline').checked = settings.online;
-    $('#optEase').checked = settings.ease;
-    $('#optTimer').checked = settings.timer;
+    seg('#optRounds', s.rounds, v => { settings.rounds = +v; saveSettings(); renderSetup(); });
+    $('#roundsSub').textContent = s.players === 2 && s.rounds ? 'pro každého hráče' : '';
 
-    const n = offlinePool(settings).length;
-    $('#btnStart').innerHTML = n ? `${I('play')}<span>Začít hru · ${n} obrázků</span>` : `${I('circle-alert')}<span>Pro tento výběr nic není</span>`;
-    $('#btnStart').disabled = !n;
+    $('#rowOnline').classList.toggle('hidden', !onlineAllowed(s));
+    $('#optOnline').checked = s.online;
+    $('#optEase').checked = s.ease;
+    $('#optTimer').checked = s.timer;
+
+    const n = photosTheme ? photoList.length : offlinePool(s).length;
+    $('#btnStart').innerHTML = n
+      ? `${I('play')}<span>Začít hru · ${n} ${photosTheme ? plural(n, 'fotka', 'fotky', 'fotek') : 'obrázků'}</span>`
+      : (photosTheme ? `${I('image-plus')}<span>Nejdřív přidejte fotky</span>` : `${I('circle-alert')}<span>Pro tento výběr nic není</span>`);
+    $('#btnStart').disabled = !n && !photosTheme;
     drawPreview();
   }
 
@@ -240,40 +319,75 @@
   $('#optEase').addEventListener('change', e => { settings.ease = e.target.checked; saveSettings(); drawPreview(); });
   $('#optTimer').addEventListener('change', e => { settings.timer = e.target.checked; saveSettings(); });
 
+  function previewSource() {
+    if (settings.theme === 'photos' && photoList.length) {
+      const p = pick(photoList);
+      return { src: Photos.url(p), cx: p.cx, cy: p.cy };
+    }
+    const pool = offlinePool({ ...settings, theme: settings.theme === 'photos' ? 'animals' : settings.theme });
+    if (!pool.length) return null;
+    return { src: pick(pool).img };
+  }
+
   function drawPreview(newImage) {
-    const pool = offlinePool(settings);
     const canvas = $('#previewCanvas');
-    if (!pool.length) { canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height); return; }
     const go = () => {
       const mode = settings.mode === 'random' ? 'random' : settings.mode;
       const seed = (Math.random() * 1e9) | 0;
-      previewState = Distort.createState(mode, settings.diff, seed);
+      const fix = st => {
+        if (previewImg.dataset.cx) { st.cx = +previewImg.dataset.cx; st.cy = +previewImg.dataset.cy; }
+        if (st.mode === 'reveal') st.startedAt = performance.now() - 7000;
+        return st;
+      };
+      previewState = fix(Distort.createState(mode, settings.diff, seed));
       previewState.ease = settings.ease;
-      if (previewState.mode === 'reveal') previewState.startedAt = performance.now() - 7000;
       Distort.render(canvas, previewImg, previewState);
       // malé živé náhledy u každého režimu
       $$('#optMode .mode canvas').forEach(c => {
-        const st = Distort.createState(c.parentElement.dataset.mode, settings.diff, seed);
-        if (st.mode === 'reveal') st.startedAt = performance.now() - 7000;
-        Distort.render(c, previewImg, st);
+        Distort.render(c, previewImg, fix(Distort.createState(c.parentElement.dataset.mode, settings.diff, seed)));
       });
     };
-    if (!previewImg || newImage || !pool.some(p => p.img && previewImg.dataset.src === p.img)) {
-      const it = pick(pool);
-      loadImage(it.img).then(img => { img.dataset.src = it.img; previewImg = img; go(); }).catch(() => { });
+    const wantPhotos = settings.theme === 'photos' && photoList.length > 0;
+    const isPhotoImg = !!previewImg && previewImg.dataset.photo === '1';
+    if (!previewImg || newImage || wantPhotos !== isPhotoImg) {
+      const src = previewSource();
+      if (!src) { canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height); return; }
+      loadImage(src.src).then(img => {
+        img.dataset.photo = wantPhotos ? '1' : '0';
+        if (src.cx != null) { img.dataset.cx = src.cx; img.dataset.cy = src.cy; }
+        previewImg = img; go();
+      }).catch(() => { });
     } else go();
   }
   $('#previewCanvas').addEventListener('click', () => drawPreview(true));
   $('#btnPreviewNext').addEventListener('click', () => drawPreview(true));
 
   // ------------------------------------------------------------ výběr položek
+  function inPack(it, theme, packId) {
+    if (!packId || packId === 'all') return true;
+    const p = packOf(theme, packId);
+    if (p.ids) return p.ids.includes(it.id);
+    if (p.test) return p.test(it);
+    return true;
+  }
   function matchesFilter(it, s) {
-    if (it.theme === 'animals') return s.theme !== 'landmarks' && s.groups.includes(groupOf(it));
+    if (it.theme === 'animals') {
+      if (s.theme === 'landmarks' || s.theme === 'photos') return false;
+      if (s.theme === 'animals' && s.packA !== 'all') return inPack(it, 'animals', s.packA);
+      return s.groups.includes(groupOf(it));
+    }
     if (it.theme === 'landmarks') {
-      if (s.theme === 'animals') return false;
+      if (s.theme === 'animals' || s.theme === 'photos') return false;
+      if (s.theme === 'landmarks' && s.packL !== 'all') return inPack(it, 'landmarks', s.packL);
       return s.continents.some(c => (it.continent || '').includes(c));
     }
     return false;
+  }
+  /** Online zvířata jdou přidat jen bez balíčku, nebo u balíčku s místem (Česká příroda) */
+  function onlineAllowed(s) {
+    if (s.theme === 'landmarks' || s.theme === 'photos') return false;
+    if (s.theme === 'animals' && s.packA !== 'all') return !!packOf('animals', s.packA).inatPlace;
+    return true;
   }
   // fotky z internetu (místa z Wikimedia), které už jsou uložené v telefonu
   const readyRemote = new Set();
@@ -295,11 +409,11 @@
     return pick(weighted);
   }
 
-  function rememberRecent(id) {
-    const r = store.get('recent', []).filter(x => x !== id);
+  function rememberRecent(id, key = 'recent', size) {
+    const r = store.get(key, []).filter(x => x !== id);
     r.push(id);
-    const max = Math.max(10, Math.floor(offlinePool(settings).length * 0.6));
-    store.set('recent', r.slice(-max));
+    const max = size || Math.max(10, Math.floor(offlinePool(settings).length * 0.6));
+    store.set(key, r.slice(-max));
   }
 
   function loadImage(src, ms = 15000) {
@@ -313,42 +427,48 @@
     });
   }
 
+  function photoItem(p) {
+    return {
+      id: p.id, theme: 'photos', photo: true,
+      name: p.caption ? p.caption : 'Naše fotka', caption: p.caption || '',
+      img: Photos.url(p), thumb: Photos.thumbUrl(p), cx: p.cx, cy: p.cy,
+    };
+  }
+
   /** Připraví další kolo: vybere položku a načte obrázek (a online nápovědy). */
   async function prepareItem(s, used, forced) {
     if (forced) {
       const img = await loadImage(forced.img);
       return { item: forced, img, detail: null };
     }
-    const online = s.online && Online.isOnline();
+    if (s.theme === 'photos') {
+      const list = photoList.filter(p => !used.has(p.id));
+      if (!list.length) throw new Error('Došly fotky');
+      const recent = new Set(store.get('recentPhotos', []));
+      const fresh = list.filter(p => !recent.has(p.id));
+      const p = pick(fresh.length ? fresh : list);
+      used.add(p.id); // ať další připravované kolo nevezme stejnou fotku
+      const it = photoItem(p);
+      const img = await loadImage(it.img);
+      return { item: it, img, detail: null };
+    }
+    const online = s.online && onlineAllowed(s) && Online.isOnline();
     let theme = s.theme === 'both' ? (Math.random() < 0.5 ? 'animals' : 'landmarks') : s.theme;
     const local = { ...s, theme };
     if (!offlinePool(local).length) local.theme = s.theme;
 
-    if (online && Math.random() < 0.5) {
+    if (online && local.theme === 'animals' && Math.random() < 0.5) {
       try {
-        if (local.theme === 'landmarks' || (local.theme === 'both' && Math.random() < 0.5)) {
-          const cands = onlineLandmarks(local).filter(i => !used.has(i.id));
-          if (cands.length) {
-            const it = { ...pick(cands) };
-            const w = await withTimeout(Online.landmarkImage(it), 9000);
-            if (w) {
-              it.img = w.img; it.csTitle = w.cs;
-              it.credit = 'Wikimedia Commons'; it.license = 'CC / volné dílo';
-              it.source = 'https://commons.wikimedia.org/wiki/File:' + encodeURIComponent(w.file || '');
-              const img = await loadImage(it.img, 12000);
-              return { item: it, img, detail: null };
-            }
-          }
-        } else {
-          const exclude = new Set([...ANIMALS.map(a => a.sci.toLowerCase()), ...used]);
-          const it = await withTimeout(Online.randomAnimal(local.groups, exclude), 12000);
-          if (it) {
-            const [img, detail] = await Promise.all([
-              loadImage(it.img, 12000),
-              withTimeout(Online.animalDetail(it.inat), 8000).catch(() => null),
-            ]);
-            return { item: it, img, detail };
-          }
+        const exclude = new Set([...ANIMALS.map(a => a.sci.toLowerCase()), ...used]);
+        const place = s.theme === 'animals' && s.packA !== 'all' ? packOf('animals', s.packA).inatPlace : null;
+        const groups = place ? null : local.groups;
+        const it = await withTimeout(Online.randomAnimal(groups, exclude, place), 12000);
+        if (it) {
+          const [img, detail] = await Promise.all([
+            loadImage(it.img, 12000),
+            withTimeout(Online.animalDetail(it.inat), 8000).catch(() => null),
+          ]);
+          return { item: it, img, detail };
         }
       } catch (e) {
         console.warn('Online položka selhala, beru offline', e);
@@ -374,16 +494,19 @@
 
   function buildHints(item, detail) {
     const h = [];
+    const canMap = item.inat && Online.isOnline();
+    const mapHint = text => ({ map: item.inat, text });
     if (item.theme === 'animals') {
       h.push(item.group === 'savec' ? 'Je to savec.' : 'Není to savec.');
       if (item.online) {
         if (item.group !== 'savec') h.push(`Je to ${GROUP_TEXT[item.group] || 'živočich'}.`);
+        if (canMap) h.push(mapHint('Kde ho lidé pozorovali:'));
         if (detail && detail.order) h.push(`Patří do řádu: ${detail.order}.`);
         if (detail && detail.family) h.push(`Čeleď: ${detail.family}.`);
         if (item.en) h.push(`Anglicky se mu říká „${item.en}“.`);
       } else {
         h.push((item.group !== 'savec' ? `Je to ${GROUP_TEXT[item.group]}. ` : '') + (DIET_TEXT[item.diet] || ''));
-        h.push(`Kde žije: ${item.region}.`);
+        h.push(canMap ? mapHint(`Kde žije: ${item.region}.`) : `Kde žije: ${item.region}.`);
         h.push(item.hint);
       }
     } else {
@@ -396,26 +519,40 @@
     return h;
   }
 
+  function hintHtml(h) {
+    if (typeof h === 'string') return h;
+    const tiles = Online.mapTiles(h.map).map(t =>
+      `<img class="hm-tile" style="left:${t.x * 50}%;top:${t.y * 50}%" src="${t.src}" alt="" onerror="this.remove()">`).join('');
+    return `${esc(h.text)}<span class="hint-map"><span class="hm-inner"><img class="hm-base" src="img/world.svg" alt="">${tiles}</span></span>` +
+      `<small class="hm-note">Oranžová místa = kde ho lidé vyfotili (iNaturalist)</small>`;
+  }
+
   // ------------------------------------------------------------ hra
   let game = null;
   let round = null;
   let rafId = 0, timerId = 0;
 
   function newGame(s, opts = {}) {
-    const names = s.players === 2
-      ? [s.names[0] || 'Hráč 1', s.names[1] || 'Hráč 2']
-      : [s.names[0] || 'Ty'];
+    const duel = isDuel(s);
+    const names = s.players === 1
+      ? [s.names[0] || 'Ty']
+      : [s.names[0] || 'Hráč 1', s.names[1] || 'Hráč 2'];
+    let total = s.rounds ? s.rounds * (duel ? 1 : names.length) : Infinity;
+    if (s.theme === 'photos') total = Math.min(total, photoList.length);
     game = {
       s: { ...s },
+      duel,
+      photos: s.theme === 'photos',
       daily: opts.daily || null,
       players: names.map(n => ({ name: n, score: 0, ok: 0 })),
       turn: 0,
-      total: s.rounds ? s.rounds * names.length : Infinity,
+      total,
       used: new Set(),
       history: [],
       next: null,
       queue: opts.queue || null,
     };
+    $('#game').classList.toggle('duel', duel);
     show('game');
     nextTurn();
   }
@@ -431,9 +568,9 @@
   async function nextTurn() {
     if (!game) return;
     if (game.turn >= game.total) { endGame(); return; }
-    const player = game.players[game.turn % game.players.length];
+    const player = game.duel ? null : game.players[game.turn % game.players.length];
 
-    if (game.players.length > 1) {
+    if (game.players.length > 1 && !game.duel) {
       const pi = game.turn % game.players.length;
       $('#turnName').textContent = player.name;
       $('#turnAvatar').textContent = player.name.charAt(0).toUpperCase();
@@ -449,6 +586,7 @@
     $('#feedback').textContent = '';
     $('#feedback').className = 'feedback';
     $('#hintList').innerHTML = '';
+    $('#choices').innerHTML = '';
     let prepared = game.next;
     game.next = null;
     if (!prepared) {
@@ -457,36 +595,57 @@
     }
     let res = await prepared;
     if (!game) return;
-    if (res instanceof Error) {
+    if (res instanceof Error && !game.photos) {
       // zkusí to ještě jednou offline
       res = await prepareItem({ ...game.s, online: false }, game.used).catch(e => e);
-      if (res instanceof Error) {
-        $('#loading').classList.add('hidden');
-        toast('Nepodařilo se načíst obrázek.', 3000, null, 'circle-alert');
-        quitToHome();
-        return;
-      }
     }
     if (!game) return;
+    if (res instanceof Error) {
+      $('#loading').classList.add('hidden');
+      if (game.history.length) { endGame(); return; }
+      toast('Nepodařilo se načíst obrázek.', 3000, null, 'circle-alert');
+      quitToHome();
+      return;
+    }
     game.used.add(res.item.id);
     if (res.item.sci) game.used.add(res.item.sci.toLowerCase());
     startRound(res, player);
     queueNext();
   }
 
+  function makeChoices(item) {
+    const all = (item.theme === 'landmarks' ? LANDMARKS : ANIMALS).filter(x => x.img && x.name !== item.name);
+    // přednostně ze stejného výběru (balíčku), aby nebyla odpověď moc jasná
+    const inGame = offlinePool({ ...game.s, theme: item.theme }).filter(x => x.name !== item.name);
+    const pool = inGame.length >= 3 ? inGame : all;
+    const same = shuffle(pool.filter(x => item.theme === 'animals' ? groupOf(x) === groupOf(item) : x.kind === item.kind));
+    const names = new Set([item.name.toLowerCase()]);
+    const out = [];
+    const take = list => { for (const x of list) { if (out.length >= 3) break; if (!names.has(x.name.toLowerCase())) { names.add(x.name.toLowerCase()); out.push(x.name); } } };
+    take(same.slice(0, 2));
+    take(shuffle(pool));
+    return shuffle([item.name, ...out]);
+  }
+
   function startRound({ item, img, detail }, player) {
     const seed = game.daily ? (game.daily.seed * 31 + game.turn) : (Math.random() * 1e9) | 0;
     const mode = game.daily ? game.daily.mode : game.s.mode;
     const st = Distort.createState(mode, game.s.diff, seed);
-    st.ease = game.s.ease;
+    st.ease = game.photos ? true : game.s.ease;
+    if (item.photo) { st.cx = item.cx; st.cy = item.cy; }
+    const choice = !game.photos && game.s.answer === 'choice';
     round = {
       item, img, detail, player, st,
-      attempts: 3, hints: buildHints(item, detail), hintsUsed: 0, closeUsed: false,
+      attempts: 3, hints: game.photos ? [] : buildHints(item, detail), hintsUsed: 0,
       started: Date.now(), done: false, timeLeft: game.s.timer ? 60 : null,
+      choice, choices: choice ? makeChoices(item) : null,
+      active: null, locked: new Set(), closeBy: new Set(), steps: 0,
     };
     $('#loading').classList.add('hidden');
     $('#modeTag').innerHTML = `${I(Distort.MODES[st.mode].icon)}${Distort.MODES[st.mode].label}`;
     $('#sourceTag').classList.toggle('hidden', !item.online);
+    renderChoices();
+    layoutControls();
     updateGameUI();
     draw();
     cancelAnimationFrame(rafId);
@@ -516,8 +675,64 @@
     input.value = '';
     input.placeholder = item.theme === 'landmarks' ? 'Co je to za místo?' : 'Co je to za zvíře?';
     // na mobilu klávesnice nevyskakuje hned, aby byl vidět obrázek
-    if (window.matchMedia('(pointer: fine)').matches) input.focus();
+    if (!game.duel && !round.choice && !game.photos && window.matchMedia('(pointer: fine)').matches) input.focus();
   }
+
+  function renderChoices() {
+    const box = $('#choices');
+    box.innerHTML = '';
+    if (!round.choice) return;
+    round.choices.forEach(n => {
+      const b = document.createElement('button');
+      b.className = 'choice';
+      b.type = 'button';
+      b.textContent = cap(n);
+      b.onclick = () => answer(n, b);
+      box.appendChild(b);
+    });
+  }
+
+  /** Které ovládací prvky jsou vidět (psaní, možnosti, bzučáky, fotky) */
+  function layoutControls() {
+    const r = round, g = game;
+    const answering = !g.duel || r.active !== null;
+    $('#photoCtrl').classList.toggle('hidden', !g.photos);
+    $('#buzzers').classList.toggle('hidden', !g.duel || g.photos || r.active !== null || r.done);
+    $('#guessForm').classList.toggle('hidden', g.photos || r.choice || !answering);
+    $('#choices').classList.toggle('hidden', g.photos || !r.choice || !answering);
+    $('#gameActions').classList.toggle('hidden', g.photos);
+    $('#btnGiveUp').innerHTML = g.duel ? `${I('ban')}Nikdo neví` : `${I('flag')}Nevím`;
+    $('#duelStatus').classList.toggle('hidden', !g.duel);
+    $('#answering').classList.toggle('hidden', !g.duel || r.active === null);
+    if (g.duel && r.active !== null) {
+      const p = g.players[r.active];
+      $('#answering').style.setProperty('--pc', PLAYER_COLORS[r.active]);
+      $('#answering').innerHTML = `<span class="av">${esc(p.name.charAt(0).toUpperCase())}</span>` +
+        `<span>Odpovídá <b>${esc(p.name)}</b></span><button type="button" class="link-btn" id="btnCancelBuzz">zrušit</button>`;
+      $('#btnCancelBuzz').onclick = () => { round.active = null; layoutControls(); };
+    }
+    if (g.duel) {
+      $$('#buzzers .buzz').forEach(b => {
+        const i = +b.dataset.p;
+        b.querySelector('.bz-name').textContent = g.players[i].name;
+        const locked = r.locked.has(i);
+        b.disabled = locked;
+        b.querySelector('b').textContent = locked ? 'Vedle' : 'Vím!';
+      });
+    }
+  }
+
+  $$('#buzzers .buzz').forEach(b => b.addEventListener('click', () => {
+    if (!round || round.done || !game.duel || round.active !== null) return;
+    const i = +b.dataset.p;
+    if (round.locked.has(i)) return;
+    round.active = i;
+    if (navigator.vibrate) navigator.vibrate(40);
+    $('#feedback').textContent = '';
+    $('#feedback').className = 'feedback';
+    layoutControls();
+    if (!round.choice) { const inp = $('#guessInput'); inp.value = ''; inp.focus(); }
+  }));
 
   function draw() {
     if (!round) return;
@@ -526,33 +741,49 @@
 
   function updateGameUI() {
     const g = game, r = round;
-    const per = g.players.length;
+    const per = g.duel ? 1 : g.players.length;
     const roundNo = Math.floor(g.turn / per) + 1;
-    const totalR = g.total === Infinity ? '∞' : g.total / per;
+    const totalR = g.total === Infinity ? '∞' : Math.ceil(g.total / per);
     $('#roundInfo').textContent = g.daily ? `Denní výzva · ${roundNo} z ${totalR}` : `Kolo ${roundNo}` + (g.total === Infinity ? '' : ` z ${totalR}`);
     $('#roundProgress').style.width = g.total === Infinity ? '100%' : `${Math.round((g.turn + (r.done ? 1 : 0)) / g.total * 100)}%`;
-    const pi = g.players.indexOf(r.player);
-    $('#playerInfo').classList.toggle('hidden', per < 2);
-    $('#playerInfo').innerHTML = per > 1 ? `<span class="av" style="background:${PLAYER_COLORS[pi]}">${esc(r.player.name.charAt(0).toUpperCase())}</span>Hraje ${esc(r.player.name)}` : '';
-    const sc = $('#scoreInfo');
-    if (sc.textContent !== String(r.player.score)) {
-      sc.textContent = r.player.score;
-      sc.parentElement.classList.remove('bump'); void sc.offsetWidth; sc.parentElement.classList.add('bump');
+    const pi = r.player ? g.players.indexOf(r.player) : -1;
+    $('#playerInfo').classList.toggle('hidden', g.duel || g.players.length < 2);
+    $('#playerInfo').innerHTML = r.player && g.players.length > 1 ? `<span class="av" style="background:${PLAYER_COLORS[pi]}">${esc(r.player.name.charAt(0).toUpperCase())}</span>Hraje ${esc(r.player.name)}` : '';
+    $('.game-top .score').classList.toggle('hidden', g.duel);
+    if (!g.duel) {
+      const sc = $('#scoreInfo');
+      if (sc.textContent !== String(r.player.score)) {
+        sc.textContent = r.player.score;
+        sc.parentElement.classList.remove('bump'); void sc.offsetWidth; sc.parentElement.classList.add('bump');
+      }
+    } else {
+      $('#duelStatus').innerHTML = g.players.map((p, i) =>
+        `<div class="ds ${r.locked.has(i) ? 'locked' : ''}" style="--pc:${PLAYER_COLORS[i]}"><span class="av">${esc(p.name.charAt(0).toUpperCase())}</span>` +
+        `<span class="ds-n">${esc(p.name)}</span><b>${p.score}</b></div>`).join('<span class="vs">vs</span>');
     }
-    const prev = $('#attempts').dataset.n;
-    $('#attempts').innerHTML = [0, 1, 2].map(i =>
-      `<svg class="i fill ${i < r.attempts ? '' : 'lost'} ${prev && i === r.attempts && +prev > r.attempts ? 'lose' : ''}" aria-hidden="true"><use href="#i-heart"/></svg>`).join('');
-    $('#attempts').dataset.n = r.attempts;
-    $('#attempts').setAttribute('aria-label', `Zbývající pokusy: ${r.attempts}`);
+    const showHearts = !g.duel && !g.photos;
+    $('#attempts').classList.toggle('hidden', !showHearts);
+    if (showHearts) {
+      const prev = $('#attempts').dataset.n;
+      $('#attempts').innerHTML = [0, 1, 2].map(i =>
+        `<svg class="i fill ${i < r.attempts ? '' : 'lost'} ${prev && i === r.attempts && +prev > r.attempts ? 'lose' : ''}" aria-hidden="true"><use href="#i-heart"/></svg>`).join('');
+      $('#attempts').dataset.n = r.attempts;
+      $('#attempts').setAttribute('aria-label', `Zbývající pokusy: ${r.attempts}`);
+    }
     const left = r.hints.length - r.hintsUsed;
     $('#btnHint').disabled = left <= 0 || r.done;
     $('#hintCost').textContent = left > 0 ? `−15 b.` : 'došly';
+    if (g.photos) {
+      const steps = PHOTO_POINTS.length - 1;
+      $('#btnMore').disabled = r.steps >= steps || r.done;
+      $('#moreCost').textContent = r.steps >= steps ? 'víc nejde' : `pak za ${photoPoints(r.steps + 1)} b.`;
+    }
   }
 
   function showHint() {
     if (!round || round.done || round.hintsUsed >= round.hints.length) return;
     const li = document.createElement('li');
-    li.innerHTML = `<span class="hn">${round.hintsUsed + 1}</span><span>${round.hints[round.hintsUsed]}</span>`;
+    li.innerHTML = `<span class="hn">${round.hintsUsed + 1}</span><span class="ht">${hintHtml(round.hints[round.hintsUsed])}</span>`;
     $('#hintList').appendChild(li);
     round.hintsUsed++;
     updateGameUI();
@@ -574,68 +805,124 @@
     const input = $('#guessInput');
     const guess = input.value.trim();
     if (!guess) { input.focus(); return; }
-    const res = Match.check(guess, round.item, { strict: game.s.precise });
-    if (res === 'correct') { finishRound(true); return; }
-    if (res === 'close' && !round.closeUsed) {
-      round.closeUsed = true;
-      feedback(game.s.precise && round.item.theme === 'animals'
+    answer(guess);
+  });
+
+  /** Vyhodnotí odpověď (napsanou nebo vybranou z možností) */
+  function answer(guess, btn) {
+    if (!round || round.done) return;
+    if (game.duel && round.active === null) return;
+    const input = $('#guessInput');
+    const res = btn
+      ? (guess === round.item.name ? 'correct' : 'wrong')
+      : Match.check(guess, round.item, { strict: game.s.answer === 'precise' });
+    if (res === 'correct') {
+      if (btn) btn.classList.add('right');
+      finishRound(true);
+      return;
+    }
+    const who = game.duel ? round.active : 0;
+    if (res === 'close' && !round.closeBy.has(who)) {
+      round.closeBy.add(who);
+      feedback(game.s.answer === 'precise' && round.item.theme === 'animals'
         ? `${I('hand')}<span>Skoro! Správné zvíře, ale napiš i druh. <small>Pokus se nepočítá.</small></span>`
         : `${I('hand')}<span>Skoro! Zkus to upřesnit. <small>Pokus se nepočítá.</small></span>`, 'close');
       input.select();
       return;
     }
-    round.attempts--;
+    if (btn) { btn.classList.add('wrong'); btn.disabled = true; }
     Distort.onMiss(round.st);
     draw();
     $('#canvasWrap').classList.remove('shake'); void $('#canvasWrap').offsetWidth; $('#canvasWrap').classList.add('shake');
     if (navigator.vibrate) navigator.vibrate(60);
-    if (round.attempts <= 0) { finishRound(false); return; }
-    const other = Match.findItem(guess, ALL_ITEMS);
-    const msg = other && other.id !== round.item.id ? `Není to ${esc(other.name)}.` : `„${esc(guess)}“ to není.`;
-    feedback(`${I('circle-x')}<span>${msg}${round.st.ease ? ' <small>Obrázek je teď o kousek lehčí.</small>' : ''}</span>`, 'wrong');
+    const other = btn ? null : Match.findItem(guess, ALL_ITEMS);
+    const what = other && other.id !== round.item.id ? `Není to ${esc(other.name)}.` : `„${esc(btn ? cap(guess) : guess)}“ to není.`;
     input.value = '';
+
+    if (game.duel) {
+      round.locked.add(round.active);
+      const missed = game.players[round.active].name;
+      round.active = null;
+      if (round.locked.size >= game.players.length) { finishRound(false); return; }
+      const nextP = game.players.find((p, i) => !round.locked.has(i));
+      if (document.activeElement) document.activeElement.blur();
+      feedback(`${I('circle-x')}<span>${esc(missed)}: ${what} <small>Teď může ${esc(nextP.name)}!</small></span>`, 'wrong');
+      layoutControls();
+      updateGameUI();
+      return;
+    }
+    round.attempts--;
+    if (round.attempts <= 0) { finishRound(false); return; }
+    feedback(`${I('circle-x')}<span>${what}${round.st.ease ? ' <small>Obrázek je teď o kousek lehčí.</small>' : ''}</span>`, 'wrong');
     updateGameUI();
-  });
+  }
 
   $('#btnGiveUp').addEventListener('click', () => { if (round && !round.done) finishRound(false); });
 
+  // vlastní fotky: postupné odkrývání a odhalení
+  const PHOTO_POINTS = [100, 70, 45, 25, 10];
+  const photoPoints = steps => Math.round(PHOTO_POINTS[Math.min(steps, PHOTO_POINTS.length - 1)] * Distort.DIFFICULTY[round.st.difficulty].mult);
+  $('#btnMore').addEventListener('click', () => {
+    if (!round || round.done || !game.photos || round.steps >= PHOTO_POINTS.length - 1) return;
+    round.steps++;
+    Distort.onMiss(round.st);
+    draw();
+    updateGameUI();
+  });
+  $('#btnReveal').addEventListener('click', () => { if (round && !round.done) finishRound(null); });
+
   function calcPoints(ok) {
     if (!ok) return 0;
-    const usedAttempts = 3 - round.attempts; // 0, 1, 2
-    let p = [100, 60, 35][usedAttempts] - 15 * round.hintsUsed;
-    p = Math.max(10, p);
+    let p;
+    if (game.duel) p = [100, 60][Math.min(1, round.locked.size)];
+    else p = [100, 60, 35][3 - round.attempts];
+    p = Math.max(10, p - 15 * round.hintsUsed);
     p *= Distort.DIFFICULTY[round.st.difficulty].mult;
-    if (game.s.precise && round.item.theme === 'animals') p *= 1.25;
+    if (game.s.answer === 'precise' && round.item.theme === 'animals') p *= 1.25;
+    if (game.s.answer === 'choice') p *= 0.5;
     if (round.st.mode === 'reveal' && round.info && round.info.revealed != null) p *= 1 + (1 - round.info.revealed);
     if (round.timeLeft != null) p *= 1 + round.timeLeft / 120;
     return Math.round(p);
   }
 
+  /** Konec kola. ok = true/false, u vlastních fotek null (rozhodnou hráči). */
   function finishRound(ok, reason) {
     if (!round || round.done) return;
     round.done = true;
     cancelAnimationFrame(rafId);
     clearInterval(timerId);
-    const pts = calcPoints(ok);
-    round.player.score += pts;
-    if (ok) round.player.ok++;
     const it = round.item;
-    const entry = { item: it, ok, pts, player: round.player.name, tries: 3 - round.attempts + (ok ? 1 : 0), hints: round.hintsUsed, mode: round.st.mode };
+    const winnerIdx = game.duel ? round.active : null;
+    round.active = null;
+    layoutControls();
+
+    if (it.photo) {
+      showPhotoResult(reason);
+      return;
+    }
+
+    const pts = calcPoints(ok);
+    const winner = game.duel ? (ok ? game.players[winnerIdx] : null) : round.player;
+    if (winner) { winner.score += pts; if (ok) winner.ok++; }
+    const entry = {
+      item: it, ok, pts, player: winner && (ok || !game.duel) ? winner.name : '—',
+      tries: game.duel ? round.locked.size + 1 : 3 - round.attempts + (ok ? 1 : 0), hints: round.hintsUsed, mode: round.st.mode,
+    };
     game.history.push(entry);
     recordStats(entry);
     if (!it.online) rememberRecent(it.id);
     if (ok) addToCollection(it);
     if (ok && navigator.vibrate) navigator.vibrate([30, 40, 30]);
 
-    // výsledek
     const rh = $('#resultHead');
     rh.className = 'result-head ' + (ok ? 'ok' : 'bad');
-    rh.innerHTML = ok
-      ? `${I('circle-check')}${round.attempts === 3 && !round.hintsUsed ? 'Na první dobrou!' : 'Správně!'}`
-      : `${I(reason ? 'clock' : 'circle-x')}${reason || 'Tentokrát ne'} · bylo to:`;
+    if (ok && game.duel) rh.innerHTML = `${I('trophy')}Bod pro ${esc(winner.name)}!`;
+    else if (ok) rh.innerHTML = `${I('circle-check')}${round.attempts === 3 && !round.hintsUsed ? 'Na první dobrou!' : 'Správně!'}`;
+    else rh.innerHTML = `${I(reason ? 'clock' : 'circle-x')}${reason || (game.duel ? 'Nikdo to nedal' : 'Tentokrát ne')} · bylo to:`;
     Distort.renderFull($('#resultCanvas'), round.img);
     $('#resultName').textContent = cap(it.name);
     $('#resultSci').innerHTML = it.sci ? `<i>${esc(it.sci)}</i>` : `${esc(it.country || '')}`;
+    $('#resultSci').classList.remove('hidden');
     $('#resultPoints').textContent = ok ? `+${pts} b.` : '0 b.';
     $('#resultPoints').className = 'points-badge' + (ok ? '' : ' zero');
     const factEl = $('#resultFact');
@@ -645,12 +932,69 @@
       if (f && $('#resultName').textContent === cap(it.name)) { factEl.textContent = f; $('#resultFactBox').classList.remove('hidden'); }
     });
     $('#resultCredit').innerHTML = creditHtml(it);
+    $('#judge').classList.add('hidden');
+    $('#btnNext').classList.remove('hidden');
     const last = game.turn + 1 >= game.total;
     $('#btnNext').innerHTML = `<span>${last ? 'Výsledky' : 'Další'}</span>${I(last ? 'trophy' : 'arrow-right')}`;
+    openResult();
+    updateGameUI();
+  }
+
+  function openResult() {
     $('#resultOverlay').classList.remove('hidden');
     $('#resultOverlay .sheet').scrollTop = 0;
-    document.activeElement && document.activeElement.blur();
+    if (document.activeElement) document.activeElement.blur();
+  }
+
+  /** Výsledek u vlastní fotky – hráči sami řeknou, kdo to uhodl */
+  function showPhotoResult(reason) {
+    const it = round.item;
+    const pts = photoPoints(round.steps);
+    const rh = $('#resultHead');
+    rh.className = 'result-head photo';
+    rh.innerHTML = `${I(reason ? 'clock' : 'images')}${reason ? reason + ' · ' : ''}Co to bylo?`;
+    Distort.renderFull($('#resultCanvas'), round.img);
+    $('#resultName').textContent = it.caption ? it.caption : 'Naše fotka';
+    $('#resultSci').classList.add('hidden');
+    $('#resultPoints').className = 'points-badge';
+    $('#resultPoints').textContent = `za ${pts} b.`;
+    $('#resultFactBox').classList.add('hidden');
+    $('#resultCredit').innerHTML = '';
+    $('#btnNext').classList.add('hidden');
+    const judge = $('#judge');
+    judge.classList.remove('hidden');
+    const btn = (label, cls, onClick, color) => {
+      const b = document.createElement('button');
+      b.className = 'btn ' + cls;
+      if (color) b.style.setProperty('--pc', color);
+      b.innerHTML = label;
+      b.onclick = onClick;
+      return b;
+    };
+    const q = game.duel ? 'Kdo to uhodl?' : game.players.length > 1 ? `Uhodl/a to <b>${esc(round.player.name)}</b>?` : 'Uhodl/a jsi to?';
+    judge.innerHTML = `<p class="judge-q">${q}</p>`;
+    const row = document.createElement('div');
+    row.className = 'judge-row' + (game.duel ? ' three' : '');
+    const done = winner => () => photoJudged(winner, pts);
+    if (game.duel) {
+      game.players.forEach((p, i) => row.appendChild(btn(`${I('trophy')}${esc(p.name)}`, 'pbtn', done(p), PLAYER_COLORS[i])));
+      row.appendChild(btn(`${I('ban')}Nikdo`, 'soft', done(null)));
+    } else {
+      row.appendChild(btn(`${I('circle-x')}Ne`, 'soft', done(null)));
+      row.appendChild(btn(`${I('circle-check')}Ano, +${pts} b.`, 'primary', done(round.player)));
+    }
+    judge.appendChild(row);
+    openResult();
     updateGameUI();
+  }
+
+  function photoJudged(winner, pts) {
+    if (!game) return;
+    if (winner) { winner.score += pts; winner.ok++; }
+    game.history.push({ item: round.item, ok: !!winner, pts: winner ? pts : 0, player: winner ? winner.name : '—', tries: round.steps + 1, hints: 0, mode: round.st.mode });
+    rememberRecent(round.item.id, 'recentPhotos', Math.max(3, Math.floor(photoList.length * 0.6)));
+    if (winner && navigator.vibrate) navigator.vibrate([30, 40, 30]);
+    goNext();
   }
 
   async function loadFact(it, detail) {
@@ -676,12 +1020,13 @@
     return `${I('camera')}<span>${esc(it.credit)}${lic}${src}</span>`;
   }
 
-  $('#btnNext').addEventListener('click', () => {
+  function goNext() {
     $('#resultOverlay').classList.add('hidden');
     if (!game) return;
     game.turn++;
     nextTurn();
-  });
+  }
+  $('#btnNext').addEventListener('click', goNext);
 
   function quitToHome() {
     cancelAnimationFrame(rafId);
@@ -705,10 +1050,12 @@
     clearInterval(timerId);
     const g = game;
     if (!g) return;
-    const stats = store.get('stats', {});
-    stats.games = (stats.games || 0) + 1;
-    stats.best = Math.max(stats.best || 0, ...g.players.map(p => p.score));
-    store.set('stats', stats);
+    if (!g.photos) {
+      const stats = store.get('stats', {});
+      stats.games = (stats.games || 0) + 1;
+      stats.best = Math.max(stats.best || 0, ...g.players.map(p => p.score));
+      store.set('stats', stats);
+    }
 
     const ps = [...g.players].sort((a, b) => b.score - a.score);
     let title = 'Konec hry', icon = 'flag';
@@ -731,7 +1078,7 @@
     }).join('');
     $('#endList').innerHTML = g.history.map(h =>
       `<li class="${h.ok ? 'ok' : 'bad'}">${I(h.ok ? 'circle-check' : 'circle-x')}<img class="thumb" src="${esc(h.item.thumb || h.item.img)}" alt="">` +
-      `<span class="nm">${esc(cap(h.item.name))}${g.players.length > 1 ? ` <small class="muted">· ${esc(h.player)}</small>` : ''}</span>` +
+      `<span class="nm">${esc(cap(h.item.name))}${g.players.length > 1 && h.player !== '—' ? ` <small class="muted">· ${esc(h.player)}</small>` : ''}</span>` +
       `<span class="pt">${h.pts} b.</span></li>`).join('');
 
     $('#endShare').classList.toggle('hidden', !g.daily);
@@ -753,7 +1100,7 @@
   $('#btnEndHome').addEventListener('click', () => { $('#endOverlay').classList.add('hidden'); show('home'); });
   $('#btnAgain').addEventListener('click', () => {
     $('#endOverlay').classList.add('hidden');
-    if ($('#endShare').classList.contains('hidden')) newGame(settings);
+    if ($('#endShare').classList.contains('hidden')) startWith(settings);
     else show('home');
   });
   $('#btnShare').addEventListener('click', async () => {
@@ -766,8 +1113,18 @@
 
   $('#btnQuick').addEventListener('click', () => startWith(settings));
   $('#btnStart').addEventListener('click', () => startWith(settings));
+  $('#btnPlayPhotos').addEventListener('click', () => {
+    settings.theme = 'photos'; saveSettings();
+    startWith(settings);
+  });
 
-  function startWith(s) {
+  async function startWith(s) {
+    if (s.theme === 'photos') {
+      await refreshPhotos();
+      if (!photoList.length) { toast('Nejdřív přidejte nějaké fotky.', 3000, null, 'image-plus'); show('photos'); return; }
+      newGame(s);
+      return;
+    }
     if (!offlinePool(s).length) { toast('Pro tento výběr nejsou žádné obrázky. Uprav skupiny.', 3000, null, 'circle-alert'); show('setup'); return; }
     newGame(s);
   }
@@ -793,7 +1150,7 @@
     const queue = order.slice(0, 5).map(i => pool[i]);
     const modes = Distort.PLAYABLE;
     const mode = modes[Math.floor(rand() * modes.length)];
-    const s = { ...settings, theme: 'animals', mode, diff: 1, players: 1, rounds: 5, online: false, ease: true, timer: false, precise: false, groups: GROUPS.map(g => g.v) };
+    const s = { ...settings, theme: 'animals', packA: 'all', mode, diff: 1, players: 1, rounds: 5, online: false, ease: true, timer: false, answer: 'loose', groups: GROUPS.map(g => g.v) };
     newGame(s, { daily: { seed, mode }, queue });
   });
 
@@ -839,7 +1196,7 @@
       list = Object.entries(col).filter(([id]) => !BY_ID.has(id)).map(([id, c]) => ({ id, ...c, online: true }));
       have = list.length;
       $('#colProgress').innerHTML = have
-        ? `<span><b>${have}</b> ${have === 1 ? 'zvíře' : have < 5 ? 'zvířata' : 'zvířat'} uhodnutých z internetu</span>`
+        ? `<span><b>${have}</b> ${plural(have, 'zvíře', 'zvířata', 'zvířat')} uhodnutých z internetu</span>`
         : `<span>Zatím nic. Zapni v nastavení „Zvířata i z internetu“ a hraj s připojením.</span>`;
     } else {
       list = ALL_ITEMS.filter(i => i.theme === colTab && i.img && !i.online);
@@ -928,10 +1285,89 @@
   }
 
   $('#btnReset').addEventListener('click', () => {
-    if (!confirm('Opravdu smazat sbírku, statistiky a denní výzvy?')) return;
+    if (!confirm('Opravdu smazat sbírku, statistiky a denní výzvy? (Vaše fotky zůstanou.)')) return;
     ['stats', 'collection', 'daily', 'recent'].forEach(k => localStorage.removeItem('hz.' + k));
     toast('Smazáno.', 2600, null, 'check');
   });
+
+  // ------------------------------------------------------------ naše fotky
+  async function renderPhotos() {
+    await refreshPhotos();
+    const grid = $('#photoGrid');
+    grid.innerHTML = '';
+    $('#btnPlayPhotos').disabled = !photoList.length;
+    $('#photoTip').classList.toggle('hidden', !photoList.length);
+    photoList.forEach(p => {
+      const d = document.createElement('button');
+      d.className = 'col-item photo-item';
+      d.innerHTML = `<div class="ph"><img loading="lazy" src="${Photos.thumbUrl(p)}" alt=""></div>` +
+        `<span class="${p.caption ? '' : 'nocap'}">${p.caption ? esc(p.caption) : `${I('pencil')} přidat popis`}</span>`;
+      d.onclick = () => openPhotoEdit(p);
+      grid.appendChild(d);
+    });
+    if (!photoList.length) {
+      grid.innerHTML = `<div class="empty" style="grid-column:1/-1">${I('image-plus')}Zatím tu nic není. Klepněte na „Přidat fotky“ a vyberte pár společných fotek.</div>`;
+    }
+  }
+
+  $('#photoInput').addEventListener('change', async e => {
+    const files = Array.from(e.target.files || []).filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|heic|heif|webp)$/i.test(f.name));
+    e.target.value = '';
+    if (!files.length) return;
+    const prog = $('#photoProgress');
+    prog.classList.remove('hidden');
+    let done = 0, failed = 0;
+    const upd = () => {
+      const pct = Math.round(done / files.length * 100);
+      prog.innerHTML = `<span><b>${done}</b> z ${files.length} uloženo</span><div class="bar"><span style="width:${pct}%"></span></div>`;
+    };
+    upd();
+    for (const f of files) {
+      try { await Photos.addFile(f); } catch (err) { failed++; }
+      done++; upd();
+    }
+    prog.classList.add('hidden');
+    Photos.persist();
+    await renderPhotos();
+    const ok = files.length - failed;
+    toast(failed ? `Uloženo ${ok}, ${failed} se nepodařilo načíst.` : `Přidáno ${ok} ${plural(ok, 'fotka', 'fotky', 'fotek')}.`, 3000, null, failed ? 'circle-alert' : 'check');
+  });
+
+  let editing = null;
+  function openPhotoEdit(p) {
+    editing = { ...p };
+    $('#editImg').src = Photos.url(p);
+    $('#editCaption').value = p.caption || '';
+    placeDot();
+    $('#photoEdit').classList.remove('hidden');
+  }
+  function placeDot() {
+    $('#focusDot').style.left = `${editing.cx * 100}%`;
+    $('#focusDot').style.top = `${editing.cy * 100}%`;
+  }
+  $('#focusWrap').addEventListener('click', e => {
+    if (!editing) return;
+    const r = $('#editImg').getBoundingClientRect();
+    editing.cx = Math.min(1, Math.max(0, (e.clientX - r.left) / r.width));
+    editing.cy = Math.min(1, Math.max(0, (e.clientY - r.top) / r.height));
+    placeDot();
+  });
+  $('#btnPhotoSave').addEventListener('click', async () => {
+    if (!editing) return;
+    editing.caption = $('#editCaption').value.trim();
+    await Photos.put(editing);
+    editing = null;
+    $('#photoEdit').classList.add('hidden');
+    renderPhotos();
+  });
+  $('#btnPhotoDelete').addEventListener('click', async () => {
+    if (!editing || !confirm('Smazat tuto fotku ze hry? (V galerii telefonu zůstane.)')) return;
+    await Photos.remove(editing.id);
+    editing = null;
+    $('#photoEdit').classList.add('hidden');
+    renderPhotos();
+  });
+  $('#photoEdit').addEventListener('click', e => { if (e.target.id === 'photoEdit') $('#btnPhotoSave').click(); });
 
   // ------------------------------------------------------------ offline: stažení obrázků
   async function precacheImages() {
