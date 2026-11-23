@@ -1,5 +1,5 @@
 /* Service worker – aplikace funguje i bez internetu. */
-const VERSION = 'v1.3.0';
+const VERSION = 'v1.3.1';
 const SHELL_CACHE = 'hz-shell-' + VERSION;
 const IMG_CACHE = 'hz-img-v1';        // offline fotky (plní je stránka, viz app.js)
 const ONLINE_CACHE = 'hz-online-v2';  // fotky z internetu, posledních pár desítek

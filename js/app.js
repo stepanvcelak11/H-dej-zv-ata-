@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '1.3.0';
+  const VERSION = '1.3.1';
   const IMG_CACHE = 'hz-img-v1';
 
   // ------------------------------------------------------------ pomocné
@@ -1389,26 +1389,48 @@
   }
 
   $('#photoInput').addEventListener('change', async e => {
-    const files = Array.from(e.target.files || []).filter(f => /^image\//.test(f.type) || /\.(jpe?g|png|heic|heif|webp)$/i.test(f.name));
+    // některé telefony posílají fotky bez typu souboru – bereme vše, co vypadá jako obrázek nebo nemá typ
+    const files = Array.from(e.target.files || []).filter(f => !f.type || /^image\//.test(f.type) || /\.(jpe?g|png|heic|heif|webp|gif|avif)$/i.test(f.name));
     e.target.value = '';
-    if (!files.length) return;
+    if (!files.length) { toast('Nevybrali jste žádné fotky.', 3000, null, 'circle-alert'); return; }
     const prog = $('#photoProgress');
     prog.classList.remove('hidden');
-    let done = 0, failed = 0;
+    $('#btnPlayPhotos').disabled = true;
+    let done = 0;
+    const fail = { format: 0, memory: 0, storage: 0, other: 0 };
     const upd = () => {
       const pct = Math.round(done / files.length * 100);
-      prog.innerHTML = `<span><b>${done}</b> z ${files.length} uloženo</span><div class="bar"><span style="width:${pct}%"></span></div>`;
+      prog.innerHTML = `<span>Ukládám fotky… <b>${done}</b> z ${files.length}</span><div class="bar"><span style="width:${pct}%"></span></div>`;
     };
     upd();
     for (const f of files) {
-      try { await Photos.addFile(f); } catch (err) { failed++; }
+      try {
+        await Photos.addFile(f);
+      } catch (err) {
+        const k = err && err.message in fail ? err.message : 'other';
+        fail[k]++;
+        console.warn('Fotku se nepodařilo přidat', f.name, f.type, err);
+        if (k === 'storage') break; // došlo místo – další by taky selhaly
+      }
       done++; upd();
+      if (done % 10 === 0) renderPhotos();
+      await sleep(30); // nechat telefon uvolnit paměť
     }
     prog.classList.add('hidden');
     Photos.persist();
     await renderPhotos();
-    const ok = files.length - failed;
-    toast(failed ? `Uloženo ${ok}, ${failed} se nepodařilo načíst.` : `Přidáno ${ok} ${plural(ok, 'fotka', 'fotky', 'fotek')}.`, 3000, null, failed ? 'circle-alert' : 'check');
+    const failed = fail.format + fail.memory + fail.storage + fail.other;
+    const ok = done - failed;
+    if (!failed) {
+      toast(`Přidáno ${ok} ${plural(ok, 'fotka', 'fotky', 'fotek')}.`, 3000, null, 'check');
+    } else {
+      const why = [];
+      if (fail.format) why.push(`${fail.format}× neznámý formát (např. HEIC – v iPhonu nastavte Fotoaparát → Formáty → Nejkompatibilnější)`);
+      if (fail.memory) why.push(`${fail.memory}× nedostatek paměti (zkuste je přidat po menších skupinách)`);
+      if (fail.storage) why.push('v telefonu došlo místo pro aplikaci');
+      if (fail.other) why.push(`${fail.other}× jiná chyba`);
+      toast(`Přidáno ${ok} z ${files.length}. Nepovedlo se: ${why.join('; ')}.`, 12000, null, 'circle-alert');
+    }
   });
 
   let editing = null;

@@ -32,7 +32,7 @@
   }
 
   async function all() {
-    const list = (await run('readonly', s => s.getAll())) || [];
+    const list = ((await run('readonly', s => s.getAll())) || []).filter(p => p && p.blob); // poškozené záznamy přeskočit
     return list.sort((a, b) => b.added - a.added);
   }
   const get = id => run('readonly', s => s.get(id));
@@ -44,47 +44,72 @@
   }
   async function count() { return (await run('readonly', s => s.count())) || 0; }
 
-  function loadFileImage(file) {
+  /** Načte fotku ze souboru. Vrací {src, w, h, close}. Preferuje ImageBitmap (šetří paměť). */
+  async function decodeFile(file) {
+    if ('createImageBitmap' in window) {
+      try {
+        const bmp = await createImageBitmap(file, { imageOrientation: 'from-image' });
+        return { src: bmp, w: bmp.width, h: bmp.height, close: () => bmp.close && bmp.close() };
+      } catch (e) { /* zkusí to přes <img> */ }
+    }
     return new Promise((resolve, reject) => {
       const u = URL.createObjectURL(file);
       const img = new Image();
-      img.onload = () => resolve({ img, release: () => URL.revokeObjectURL(u) });
-      img.onerror = () => { URL.revokeObjectURL(u); reject(new Error('Fotku se nepodařilo načíst')); };
+      img.onload = () => resolve({ src: img, w: img.naturalWidth, h: img.naturalHeight, close: () => { URL.revokeObjectURL(u); img.src = ''; } });
+      img.onerror = () => { URL.revokeObjectURL(u); reject(new Error('format')); };
       img.src = u;
     });
   }
 
-  function toBlob(img, max, quality) {
-    const w = img.naturalWidth, h = img.naturalHeight;
+  /** Nakreslí zdroj do canvasu dané max. velikosti */
+  function drawScaled(src, w, h, max) {
     const k = Math.min(1, max / Math.max(w, h));
     const c = document.createElement('canvas');
-    c.width = Math.round(w * k); c.height = Math.round(h * k);
+    c.width = Math.max(1, Math.round(w * k)); c.height = Math.max(1, Math.round(h * k));
     const ctx = c.getContext('2d');
     ctx.imageSmoothingQuality = 'high';
-    ctx.drawImage(img, 0, 0, c.width, c.height);
-    return new Promise(res => c.toBlob(res, 'image/jpeg', quality));
+    ctx.drawImage(src, 0, 0, c.width, c.height);
+    return c;
   }
 
-  /** Zmenší fotku a uloží ji. Vrací uložený záznam. */
+  function canvasBlob(c, quality) {
+    return new Promise((resolve, reject) => c.toBlob(b => (b ? resolve(b) : reject(new Error('memory'))), 'image/jpeg', quality));
+  }
+  // uvolnit paměť canvasu hned (iPhone má na canvasy přísný limit)
+  const freeCanvas = c => { c.width = 0; c.height = 0; };
+
+  /**
+   * Zmenší fotku a uloží ji. Vrací uložený záznam.
+   * Chyby: 'format' (neznámý formát, např. HEIC v prohlížeči, který ho neumí), 'memory', 'storage'.
+   */
   async function addFile(file) {
-    const { img, release } = await loadFileImage(file);
+    const d = await decodeFile(file);
+    let big, small;
     try {
-      const [blob, thumb] = await Promise.all([toBlob(img, MAX_SIDE, 0.86), toBlob(img, THUMB, 0.75)]);
+      big = drawScaled(d.src, d.w, d.h, MAX_SIDE);
+      d.close();
+      small = drawScaled(big, big.width, big.height, THUMB); // náhled z už zmenšené fotky
+      const blob = await canvasBlob(big, 0.85);
+      const thumb = await canvasBlob(small, 0.75);
       const p = {
         id: 'p' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
         blob, thumb, caption: '', cx: 0.5, cy: 0.5, added: Date.now(),
       };
-      await put(p);
+      try { await put(p); } catch (e) { throw new Error('storage'); }
       return p;
-    } finally { release(); }
+    } finally {
+      d.close();
+      if (big) freeCanvas(big);
+      if (small) freeCanvas(small);
+    }
   }
 
   function url(p) {
-    if (!urls.has(p.id)) urls.set(p.id, URL.createObjectURL(p.blob));
+    if (!urls.has(p.id)) urls.set(p.id, p.blob ? URL.createObjectURL(p.blob) : '');
     return urls.get(p.id);
   }
   function thumbUrl(p) {
-    if (!thumbUrls.has(p.id)) thumbUrls.set(p.id, URL.createObjectURL(p.thumb || p.blob));
+    if (!thumbUrls.has(p.id)) thumbUrls.set(p.id, (p.thumb || p.blob) ? URL.createObjectURL(p.thumb || p.blob) : '');
     return thumbUrls.get(p.id);
   }
 
