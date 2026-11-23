@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '1.3.1';
+  const VERSION = '1.4.0';
   const IMG_CACHE = 'hz-img-v1';
 
   // ------------------------------------------------------------ pomocné
