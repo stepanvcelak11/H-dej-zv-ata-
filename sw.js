@@ -1,5 +1,5 @@
 /* Service worker – aplikace funguje i bez internetu. */
-const VERSION = 'v1.2.2';
+const VERSION = 'v1.3.0';
 const SHELL_CACHE = 'hz-shell-' + VERSION;
 const IMG_CACHE = 'hz-img-v1';        // offline fotky (plní je stránka, viz app.js)
 const ONLINE_CACHE = 'hz-online-v2';  // fotky z internetu, posledních pár desítek
@@ -17,6 +17,8 @@ const SHELL = [
   'js/app.js',
   'data/animals.js',
   'data/landmarks.js',
+  'data/masks.js',
+  'js/subject.js',
   'manifest.webmanifest',
   'img/world.svg',
   'icons/icon-192.png',
@@ -63,6 +65,11 @@ self.addEventListener('fetch', e => {
         const res = await fetch(req);
         if (res.ok && url.pathname.includes('/img/')) {
           const c = await caches.open(IMG_CACHE);
+          c.put(req, res.clone());
+        }
+        // model a knihovna pro hledání zvířete na fotce – uloží se při prvním použití
+        if (res.ok && /\/(vendor|models)\//.test(url.pathname)) {
+          const c = await caches.open('hz-ml-v1');
           c.put(req, res.clone());
         }
         return res;

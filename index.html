@@ -182,7 +182,8 @@
       </section>
 
       <section class="card">
-        <h3 class="card-h">Jak bude obrázek vypadat</h3>
+        <h3 class="card-h">Jak bude obrázek vypadat <span class="card-sub" id="modesCount"></span></h3>
+        <p class="hint-text" style="margin:-6px 0 12px">Vyber jeden nebo víc způsobů zkreslení. Když jich vybereš víc, hra je bude střídat.</p>
         <div class="preview-wrap">
           <canvas id="previewCanvas" width="520" height="520"></canvas>
           <button class="preview-shuffle" id="btnPreviewNext" aria-label="Jiný obrázek"><svg class="i"><use href="#i-dices"/></svg></button>
@@ -524,6 +525,8 @@
 
 <script src="data/animals.js"></script>
 <script src="data/landmarks.js"></script>
+<script src="data/masks.js"></script>
+<script src="js/subject.js"></script>
 <script src="js/packs.js"></script>
 <script src="js/photos.js"></script>
 <script src="js/distort.js"></script>

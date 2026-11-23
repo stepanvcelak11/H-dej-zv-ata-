@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '1.2.2';
+  const VERSION = '1.3.0';
   const IMG_CACHE = 'hz-img-v1';
 
   // ------------------------------------------------------------ pomocné
@@ -39,6 +39,12 @@
   const LANDMARKS = (window.DATA_LANDMARKS || []).map(l => ({ ...l, theme: 'landmarks' }));
   const ALL_ITEMS = [...ANIMALS, ...LANDMARKS];
   const BY_ID = new Map(ALL_ITEMS.map(i => [i.id, i]));
+  const MASKS = window.DATA_MASKS || {};
+  const maskOf = id => (MASKS[id] ? Subject.decode(MASKS[id]) : null);
+  /** Maska zvířete spočítaná v telefonu (fotky z internetu, vlastní fotky); když to nejde, null */
+  async function detectMask(img, ms) {
+    try { return await withTimeout(Subject.detect(img), ms); } catch (e) { console.warn('Maska zvířete se nespočítala', e); return null; }
+  }
   const PACKS = window.PACKS || { animals: [{ id: 'all' }], landmarks: [{ id: 'all' }] };
   const packOf = (theme, id) => (PACKS[theme] || []).find(p => p.id === id) || PACKS[theme][0];
 
@@ -80,6 +86,13 @@
   };
   let settings = { ...DEFAULTS, ...store.get('settings', {}) };
   if (settings.precise !== undefined) { if (settings.precise) settings.answer = 'precise'; delete settings.precise; }
+  // více způsobů zkreslení najednou (dřív jen jeden režim)
+  if (!Array.isArray(settings.modes) || !settings.modes.length) {
+    settings.modes = settings.mode === 'random' || !settings.mode ? (settings.mode ? Distort.PLAYABLE.slice() : ['zoom']) : [settings.mode];
+  }
+  settings.modes = settings.modes.filter(m => Distort.PLAYABLE.includes(m));
+  if (!settings.modes.length) settings.modes = ['zoom'];
+  delete settings.mode;
   const saveSettings = () => store.set('settings', settings);
   const isDuel = s => s.players === 'duel';
 
@@ -108,7 +121,8 @@
     const theme = {
       animals: ['paw-print', 'Zvířata'], landmarks: ['landmark', 'Místa'], both: ['globe', 'Zvířata i místa'], photos: ['images', 'Naše fotky'],
     }[s.theme] || ['paw-print', 'Zvířata'];
-    const m = Distort.MODES[s.mode];
+    const ms = s.modes || ['zoom'];
+    const m = ms.length === 1 ? Distort.MODES[ms[0]] : { icon: 'dices', label: `${ms.length} ${plural(ms.length, 'zkreslení', 'zkreslení', 'zkreslení')} na střídačku` };
     const tags = [[theme[0], theme[1]]];
     if (s.theme === 'animals' && s.packA !== 'all') tags[0][1] = packOf('animals', s.packA).label;
     if (s.theme === 'landmarks' && s.packL !== 'all') tags[0][1] = packOf('landmarks', s.packL).label;
@@ -245,16 +259,28 @@
     // režimy
     const modes = $('#optMode');
     modes.innerHTML = '';
-    Object.entries(Distort.MODES).forEach(([k, m]) => {
+    const allOn = Distort.PLAYABLE.every(k => s.modes.includes(k));
+    [...Distort.PLAYABLE, 'all'].forEach(k => {
+      const isAll = k === 'all';
+      const on = isAll ? allOn : s.modes.includes(k);
       const b = document.createElement('button');
-      b.className = 'mode' + (s.mode === k ? ' on' : '');
+      b.className = 'mode' + (on ? ' on' : '');
       b.dataset.mode = k;
-      b.innerHTML = (k === 'random' ? `<div class="mode-dice">${I('dices')}</div>` : '<canvas width="160" height="160"></canvas>') +
-        `<span>${m.label}</span>`;
-      b.onclick = () => { settings.mode = k; saveSettings(); renderSetup(); };
+      b.setAttribute('aria-pressed', on);
+      b.innerHTML = (isAll ? `<div class="mode-dice">${I('dices')}</div>` : '<canvas width="160" height="160"></canvas>') +
+        `<span>${isAll ? 'Všechny' : Distort.MODES[k].label}</span><i class="mode-check">${I('check')}</i>`;
+      b.onclick = () => {
+        if (isAll) settings.modes = allOn ? [settings.modes[0] || 'zoom'] : Distort.PLAYABLE.slice();
+        else if (on && settings.modes.length === 1) { toast('Aspoň jeden způsob zkreslení musí zůstat zapnutý.'); return; }
+        else settings.modes = on ? settings.modes.filter(x => x !== k) : Distort.PLAYABLE.filter(x => x === k || settings.modes.includes(x));
+        saveSettings(); renderSetup();
+      };
       modes.appendChild(b);
     });
-    $('#modeDesc').textContent = Distort.MODES[s.mode].desc;
+    $('#modeDesc').innerHTML = s.modes.length === 1
+      ? esc(Distort.MODES[s.modes[0]].desc)
+      : `Každé kolo náhodně jeden z vybraných: <b>${s.modes.map(k => Distort.MODES[k].label).join(', ')}</b>.`;
+    $('#modesCount').textContent = `${s.modes.length} z ${Distort.PLAYABLE.length}`;
 
     const diff = $('#optDiff');
     diff.innerHTML = '';
@@ -326,17 +352,18 @@
     }
     const pool = offlinePool({ ...settings, theme: settings.theme === 'photos' ? 'animals' : settings.theme });
     if (!pool.length) return null;
-    return { src: pick(pool).img };
+    const it = pick(pool);
+    return { src: it.img, id: it.id };
   }
 
   function drawPreview(newImage) {
     const canvas = $('#previewCanvas');
     const go = () => {
-      const mode = settings.mode === 'random' ? 'random' : settings.mode;
+      const mode = pick(settings.modes);
       const seed = (Math.random() * 1e9) | 0;
       const fix = st => {
         if (previewImg.dataset.cx && !(+previewImg.dataset.cx === 0.5 && +previewImg.dataset.cy === 0.5)) { st.cx = +previewImg.dataset.cx; st.cy = +previewImg.dataset.cy; }
-        else Distort.focusDetail(previewImg, st);
+        else if (!Distort.focusMask(previewImg, st, maskOf(previewImg.dataset.id))) Distort.focusDetail(previewImg, st);
         if (st.mode === 'reveal') st.startedAt = performance.now() - 7000;
         return st;
       };
@@ -345,7 +372,7 @@
       Distort.render(canvas, previewImg, previewState);
       // malé živé náhledy u každého režimu
       $$('#optMode .mode canvas').forEach(c => {
-        Distort.render(c, previewImg, fix(Distort.createState(c.parentElement.dataset.mode, settings.diff, seed)));
+        Distort.render(c, previewImg, fix(Distort.createState(c.closest('.mode').dataset.mode, settings.diff, seed)));
       });
     };
     const wantPhotos = settings.theme === 'photos' && photoList.length > 0;
@@ -356,6 +383,7 @@
       loadImage(src.src).then(img => {
         img.dataset.photo = wantPhotos ? '1' : '0';
         if (src.cx != null) { img.dataset.cx = src.cx; img.dataset.cy = src.cy; }
+        if (src.id) img.dataset.id = src.id;
         previewImg = img; go();
       }).catch(() => { });
     } else go();
@@ -468,7 +496,7 @@
   async function prepareItem(s, used, forced) {
     if (forced) {
       const img = await loadImage(forced.img);
-      return { item: forced, img, detail: null };
+      return { item: forced, img, detail: null, mask: maskOf(forced.id) };
     }
     if (s.theme === 'photos') {
       const list = photoList.filter(p => !used.has(p.id));
@@ -479,7 +507,10 @@
       used.add(p.id); // ať další připravované kolo nevezme stejnou fotku
       const it = photoItem(p);
       const img = await loadImage(it.img);
-      return { item: it, img, detail: null };
+      // když u fotky nikdo nevybral bod přiblížení, zkusí najít, kde je hlavní objekt
+      const manual = !(it.cx === 0.5 && it.cy === 0.5);
+      const mask = manual ? null : await detectMask(img, 9000);
+      return { item: it, img, detail: null, mask };
     }
     const online = s.online && onlineAllowed(s) && Online.isOnline();
     let theme = s.theme === 'both' ? (Math.random() < 0.5 ? 'animals' : 'landmarks') : s.theme;
@@ -497,7 +528,9 @@
             loadItemImage(it.img, 12000).catch(() => loadImage(it.thumb, 10000)),
             withTimeout(Online.animalDetail(it.inat), 8000).catch(() => null),
           ]);
-          return { item: it, img, detail };
+          // kde je na fotce zvíře – ať přiblížení ukazuje zvíře, ne okolí
+          const mask = await detectMask(img, 9000);
+          return { item: it, img, detail, mask };
         }
       } catch (e) {
         console.warn('Online položka selhala, beru offline', e);
@@ -507,7 +540,7 @@
       const it = pickOffline(local, used);
       try {
         const img = await loadItemImage(it.img);
-        return { item: it, img, detail: null };
+        return { item: it, img, detail: null, mask: maskOf(it.id) };
       } catch (e) { used.add(it.id); }
     }
     throw new Error('Nepodařilo se načíst obrázek');
@@ -582,6 +615,8 @@
       queue: opts.queue || null,
     };
     $('#game').classList.toggle('duel', duel);
+    // model na hledání zvířete na fotce se stáhne dopředu, když bude potřeba
+    if ((s.theme === 'photos') || (s.online && onlineAllowed(s) && Online.isOnline())) Subject.warm();
     show('game');
     nextTurn();
   }
@@ -656,14 +691,14 @@
     return shuffle([item.name, ...out]);
   }
 
-  function startRound({ item, img, detail }, player) {
+  function startRound({ item, img, detail, mask }, player) {
     const seed = game.daily ? (game.daily.seed * 31 + game.turn) : (Math.random() * 1e9) | 0;
-    const mode = game.daily ? game.daily.mode : game.s.mode;
+    const mode = game.daily ? game.daily.mode : pick(game.s.modes);
     const st = Distort.createState(mode, game.s.diff, seed);
     st.ease = game.photos ? true : game.s.ease;
     // u vlastní fotky s ručně vybraným bodem přiblížení ho použít, jinak najít místo s nejvíc detaily
     if (item.photo && !(item.cx === 0.5 && item.cy === 0.5)) { st.cx = item.cx; st.cy = item.cy; }
-    else Distort.focusDetail(img, st);
+    else if (!Distort.focusMask(img, st, mask)) Distort.focusDetail(img, st);
     const choice = !game.photos && game.s.answer === 'choice';
     round = {
       item, img, detail, player, st,
@@ -1193,7 +1228,7 @@
     const queue = order.slice(0, 5).map(i => pool[i]);
     const modes = Distort.PLAYABLE;
     const mode = modes[Math.floor(rand() * modes.length)];
-    const s = { ...settings, theme: 'animals', packA: 'all', mode, diff: 1, players: 1, rounds: 5, online: false, ease: true, timer: false, answer: 'loose', groups: GROUPS.map(g => g.v) };
+    const s = { ...settings, theme: 'animals', packA: 'all', modes: [mode], diff: 1, players: 1, rounds: 5, online: false, ease: true, timer: false, answer: 'loose', groups: GROUPS.map(g => g.v) };
     newGame(s, { daily: { seed, mode }, queue });
   });
 

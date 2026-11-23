@@ -5,6 +5,8 @@ Mobilní hra (PWA): hádej zvířata a slavná místa z přiblížených, rozmaz
 ## Co umí
 
 - **Režimy obrázku:** přiblížení, rozmazání, pixely, okénka (část políček je černá), odkrývání (políčka se odkrývají v čase), puzzle (přeházené dílky), mix, náhodně
+- **Výběr více zkreslení najednou:** hra je pak v každém kole náhodně střídá
+- **Přiblížení míří na zvíře:** u zvířat v aplikaci podle předpočítané masky (U²-Net), u fotek z internetu a vlastních fotek ji spočítá model přímo v telefonu (stáhne se jednou, ~15 MB)
 - **4 obtížnosti**, které mění sílu zkreslení a násobí body
 - **3 pokusy** a po každé chybě se obrázek může trochu zlehčit
 - **Nápovědy po kouscích:** savec / není savec, skupina a potrava, kde žije, popis a nakonec počáteční písmeno s počtem písmen
@@ -38,6 +40,8 @@ Bez build kroku, čisté HTML/CSS/JS. Lokálně stačí `python3 -m http.server`
 - `tools/animals.txt`, `tools/landmarks.txt`: seznam zvířat a míst (jména, synonyma, nápovědy)
 - `tools/landmark_overrides.txt`: náhradní fotky míst, kde hlavní obrázek článku na Wikipedii není vhodný
 - `tools/build_data.py`: stáhne fotky (iNaturalist / Wikimedia Commons, jen licence CC) a vygeneruje `data/*.js`
+- `tools/build_masks.py`: spočítá masky „kde je na fotce zvíře“ do `data/masks.js`
+- `vendor/ort/`, `models/u2netp.onnx`: ONNX Runtime Web (MIT) a model U²-Net (Apache 2.0) pro hledání zvířete na fotce v telefonu
 - `tools/make_icons.py`: vygeneruje ikonu aplikace
 - `tools/build_icons.py`: vloží do `index.html` sadu ikon [Lucide](https://lucide.dev) (ISC)
 - `fonts/`: písmo Nunito (OFL), licence jsou ve složce `licenses/`

@@ -1,0 +1,4 @@
+U²-Net (models/u2netp.onnx, masky v data/masks.js spočítané modelem u2net)
+Xuebin Qin a kol., "U²-Net: Going Deeper with Nested U-Structure for Salient Object Detection", 2020.
+https://github.com/xuebinqin/U-2-Net – licence Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0).
+Model ve formátu ONNX z projektu rembg (https://github.com/danielgatis/rembg).

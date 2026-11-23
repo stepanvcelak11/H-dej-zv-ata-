@@ -82,10 +82,17 @@
     return { x: (w - side) / 2, y: (h - side) / 2, w: side, h: side, iw: w, ih: h };
   }
 
+  /** Velikost výřezu: když víme, kde je zvíře, počítá se z velikosti zvířete, jinak z fotky */
+  function zoomSide(img, st, s) {
+    const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+    const m = Math.min(w, h);
+    if (st.subject) return clamp(lerp(1.25, 0.2, s) * st.subject.size, Math.max(40, m * 0.06), m);
+    return m * lerp(0.62, 0.085, s); // podíl kratší strany
+  }
+
   function zoomRect(img, st, s) {
     const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
-    const frac = lerp(0.62, 0.085, s); // podíl kratší strany
-    const side = Math.min(w, h) * frac;
+    const side = zoomSide(img, st, s);
     let x = st.cx * w - side / 2, y = st.cy * h - side / 2;
     x = clamp(x, 0, w - side); y = clamp(y, 0, h - side);
     return { x, y, w: side, h: side };
@@ -277,6 +284,45 @@
     } catch (e) { return null; }
   }
 
+  /**
+   * Přiblížení na zvíře podle masky (mřížka G×G, 1 = zvíře).
+   * Vybere výřez, který je co nejvíc vyplněný zvířetem. Vrací true, když se to povedlo.
+   */
+  function focusMask(img, st, bits, G = 32) {
+    if (st.mode !== 'zoom' && st.mode !== 'mix') return false;
+    if (!bits) return false;
+    const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+    let x0 = G, y0 = G, x1 = -1, y1 = -1, count = 0;
+    for (let y = 0; y < G; y++) for (let x = 0; x < G; x++) {
+      if (bits[y * G + x]) { count++; if (x < x0) x0 = x; if (x > x1) x1 = x; if (y < y0) y0 = y; if (y > y1) y1 = y; }
+    }
+    if (count < 3) return false; // zvíře nenalezeno
+    const bw = (x1 - x0 + 1) / G * w, bh = (y1 - y0 + 1) / G * h;
+    st.subject = { size: Math.sqrt(bw * bh) };
+    const s = strength(st) * (st.mode === 'mix' ? 0.75 : 1);
+    const side = zoomSide(img, st, s);
+    const ww = Math.max(1, Math.min(G, Math.round(side / w * G)));
+    const wh = Math.max(1, Math.min(G, Math.round(side / h * G)));
+    // integrální obraz masky
+    const S = new Float64Array((G + 1) * (G + 1));
+    for (let y = 0; y < G; y++) for (let x = 0; x < G; x++) {
+      S[(y + 1) * (G + 1) + x + 1] = bits[y * G + x] + S[y * (G + 1) + x + 1] + S[(y + 1) * (G + 1) + x] - S[y * (G + 1) + x];
+    }
+    const cands = [];
+    for (let y = 0; y + wh <= G; y++) for (let x = 0; x + ww <= G; x++) {
+      const sum = S[(y + wh) * (G + 1) + x + ww] - S[y * (G + 1) + x + ww] - S[(y + wh) * (G + 1) + x] + S[y * (G + 1) + x];
+      cands.push({ cx: (x + ww / 2) / G, cy: (y + wh / 2) / G, cover: sum / (ww * wh) });
+    }
+    if (!cands.length) return false;
+    cands.sort((a, b) => b.cover - a.cover);
+    const best = cands[0].cover;
+    // náhodně mezi výřezy, které jsou skoro stejně dobře vyplněné zvířetem
+    const top = cands.filter(c => c.cover >= best - 0.06);
+    const p = top[Math.floor(rng(st.seed + 77)() * top.length)];
+    st.cx = p.cx; st.cy = p.cy;
+    return true;
+  }
+
   /** Nastaví střed přiblížení na nejzajímavější místo fotky (u režimů s přiblížením) */
   function focusDetail(img, st) {
     if (st.mode !== 'zoom' && st.mode !== 'mix') return;
@@ -293,5 +339,5 @@
     }
   }
 
-  window.Distort = { MODES, PLAYABLE, DIFFICULTY, createState, render, renderFull, onMiss, strength, rng, shuffled, focusDetail };
+  window.Distort = { MODES, PLAYABLE, DIFFICULTY, createState, render, renderFull, onMiss, strength, rng, shuffled, focusDetail, focusMask };
 })();

@@ -285,7 +285,15 @@ button { font: inherit; color: inherit; }
 .mode .mode-dice .i { width: 34px; height: 34px; }
 .mode span { display: flex; align-items: center; gap: 3px; }
 .mode span .i { width: 13px; height: 13px; }
+.mode { position: relative; }
 .mode.on { outline-color: var(--accent); color: var(--ink); background: var(--accent-soft); }
+.mode-check {
+  position: absolute; top: 5px; right: 5px; width: 20px; height: 20px; border-radius: 50%; display: none; place-items: center;
+  background: var(--accent); color: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.3);
+}
+.mode-check .i { width: 13px; height: 13px; stroke-width: 3.2; }
+.mode.on .mode-check { display: grid; }
+.mode:not(.on) canvas { filter: grayscale(.7) opacity(.75); }
 
 .seg { display: flex; background: var(--surface-2); border-radius: 16px; padding: 4px; gap: 4px; }
 .seg button {
