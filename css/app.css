@@ -707,6 +707,12 @@ textarea {
 }
 textarea:focus { border-color: var(--accent); }
 
+.skip-btn {
+  display: flex; align-items: center; justify-content: center; gap: 6px; margin: 2px auto 0; border: 0; background: none;
+  color: var(--ink-3); font-weight: 700; font-size: 13px; cursor: pointer; padding: 6px 8px; text-align: center;
+}
+.skip-btn .i { width: 15px; height: 15px; }
+
 /* ================================================================ toast */
 .toast {
   position: fixed; left: 50%; bottom: calc(var(--safe-bottom) + 20px); transform: translateX(-50%);

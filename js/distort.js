@@ -230,6 +230,60 @@
     ctx.drawImage(img, (size - w) / 2, (size - h) / 2, w, h);
   }
 
+  /**
+   * Najde na fotce místo s nejvíc detaily (hrany, textura), kde bývá zvíře –
+   * aby přiblížení neukázalo jen prázdné pozadí. Vrací {cx, cy} nebo null.
+   */
+  function detailCenter(img, st) {
+    try {
+      const w = img.naturalWidth || img.width, h = img.naturalHeight || img.height;
+      const N = 56;
+      const gw = w >= h ? N : Math.max(8, Math.round(N * w / h));
+      const gh = h >= w ? N : Math.max(8, Math.round(N * h / w));
+      const c = document.createElement('canvas');
+      c.width = gw; c.height = gh;
+      const x = c.getContext('2d', { willReadFrequently: true });
+      x.drawImage(img, 0, 0, gw, gh);
+      const d = x.getImageData(0, 0, gw, gh).data;
+      const gray = new Float32Array(gw * gh);
+      for (let i = 0; i < gw * gh; i++) gray[i] = d[i * 4] * 0.3 + d[i * 4 + 1] * 0.59 + d[i * 4 + 2] * 0.11;
+      // integrální obraz z velikosti gradientu
+      const S = new Float64Array((gw + 1) * (gh + 1));
+      for (let yy = 0; yy < gh; yy++) {
+        for (let xx = 0; xx < gw; xx++) {
+          const i = yy * gw + xx;
+          const gx = xx + 1 < gw ? Math.abs(gray[i + 1] - gray[i]) : 0;
+          const gy = yy + 1 < gh ? Math.abs(gray[i + gw] - gray[i]) : 0;
+          S[(yy + 1) * (gw + 1) + xx + 1] = gx + gy + S[yy * (gw + 1) + xx + 1] + S[(yy + 1) * (gw + 1) + xx] - S[yy * (gw + 1) + xx];
+        }
+      }
+      const s = strength(st) * (st.mode === 'mix' ? 0.75 : 1);
+      const win = Math.max(3, Math.round(lerp(0.62, 0.085, s) * Math.min(gw, gh)));
+      const cands = [];
+      for (let yy = 0; yy + win <= gh; yy++) {
+        for (let xx = 0; xx + win <= gw; xx++) {
+          const sum = S[(yy + win) * (gw + 1) + xx + win] - S[yy * (gw + 1) + xx + win] - S[(yy + win) * (gw + 1) + xx] + S[yy * (gw + 1) + xx];
+          const cx = (xx + win / 2) / gw, cy = (yy + win / 2) / gh;
+          const dist = Math.hypot(cx - 0.5, cy - 0.5) / 0.7071;
+          cands.push({ cx, cy, score: sum * (1 - 0.35 * dist) });
+        }
+      }
+      if (!cands.length) return null;
+      cands.sort((a, b) => b.score - a.score);
+      // trochu náhody mezi nejlepšími místy, ať to není pokaždé stejné
+      const top = cands.slice(0, Math.max(1, Math.round(cands.length * 0.04)));
+      const pickd = top[Math.floor(rng(st.seed + 99)() * top.length)];
+      return { cx: pickd.cx, cy: pickd.cy };
+    } catch (e) { return null; }
+  }
+
+  /** Nastaví střed přiblížení na nejzajímavější místo fotky (u režimů s přiblížením) */
+  function focusDetail(img, st) {
+    if (st.mode !== 'zoom' && st.mode !== 'mix') return;
+    const p = detailCenter(img, st);
+    if (p) { st.cx = p.cx; st.cy = p.cy; }
+  }
+
   /** Náhled "puzzle" – po chybě opraví několik dílků na správné místo */
   function onMiss(st) {
     st.misses++;
@@ -239,5 +293,5 @@
     }
   }
 
-  window.Distort = { MODES, PLAYABLE, DIFFICULTY, createState, render, renderFull, onMiss, strength, rng, shuffled };
+  window.Distort = { MODES, PLAYABLE, DIFFICULTY, createState, render, renderFull, onMiss, strength, rng, shuffled, focusDetail };
 })();

@@ -1,8 +1,8 @@
 /* Service worker – aplikace funguje i bez internetu. */
-const VERSION = 'v1.2.0';
+const VERSION = 'v1.2.2';
 const SHELL_CACHE = 'hz-shell-' + VERSION;
 const IMG_CACHE = 'hz-img-v1';        // offline fotky (plní je stránka, viz app.js)
-const ONLINE_CACHE = 'hz-online-v1';  // fotky z internetu, posledních pár desítek
+const ONLINE_CACHE = 'hz-online-v2';  // fotky z internetu, posledních pár desítek
 const ONLINE_MAX = 80;
 
 const SHELL = [
@@ -33,7 +33,8 @@ self.addEventListener('install', e => {
 self.addEventListener('activate', e => {
   e.waitUntil((async () => {
     const keys = await caches.keys();
-    await Promise.all(keys.filter(k => k.startsWith('hz-shell-') && k !== SHELL_CACHE).map(k => caches.delete(k)));
+    // staré cache (včetně hz-online-v1, kde mohly zůstat uložené chybové odpovědi)
+    await Promise.all(keys.filter(k => (k.startsWith('hz-shell-') && k !== SHELL_CACHE) || k === 'hz-online-v1').map(k => caches.delete(k)));
     await self.clients.claim();
   })());
 });
@@ -78,11 +79,12 @@ self.addEventListener('fetch', e => {
     e.respondWith((async () => {
       // fotky míst uložené při prvním spuštění (hz-img-v1) nebo dříve hrané online fotky
       const hit = await caches.match(req.url);
-      if (hit) return hit;
-      const c = await caches.open(ONLINE_CACHE);
-      const res = await fetch(req);
-      if (res.ok || res.type === 'opaque') {
-        c.put(req, res.clone()).then(() => trim(ONLINE_CACHE, ONLINE_MAX));
+      if (hit && (hit.ok || hit.type === 'opaque' && req.mode === 'no-cors')) return hit;
+      // přes CORS, aby šlo poznat chybu (např. 429 – příliš mnoho požadavků) a neuložit ji
+      const res = await fetch(new Request(req.url, { mode: 'cors', credentials: 'omit' }));
+      if (res.ok) {
+        const c = await caches.open(ONLINE_CACHE);
+        c.put(req.url, res.clone()).then(() => trim(ONLINE_CACHE, ONLINE_MAX));
       }
       return res;
     })());

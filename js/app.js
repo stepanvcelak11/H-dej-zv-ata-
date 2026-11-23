@@ -2,7 +2,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '1.2.0';
+  const VERSION = '1.2.2';
   const IMG_CACHE = 'hz-img-v1';
 
   // ------------------------------------------------------------ pomocné
@@ -335,7 +335,8 @@
       const mode = settings.mode === 'random' ? 'random' : settings.mode;
       const seed = (Math.random() * 1e9) | 0;
       const fix = st => {
-        if (previewImg.dataset.cx) { st.cx = +previewImg.dataset.cx; st.cy = +previewImg.dataset.cy; }
+        if (previewImg.dataset.cx && !(+previewImg.dataset.cx === 0.5 && +previewImg.dataset.cy === 0.5)) { st.cx = +previewImg.dataset.cx; st.cy = +previewImg.dataset.cy; }
+        else Distort.focusDetail(previewImg, st);
         if (st.mode === 'reveal') st.startedAt = performance.now() - 7000;
         return st;
       };
@@ -416,15 +417,43 @@
     store.set(key, r.slice(-max));
   }
 
+  /** Je obrázek prázdný (jedna barva) – třeba chybová stránka místo fotky? */
+  function looksBlank(img) {
+    try {
+      const c = document.createElement('canvas');
+      c.width = c.height = 12;
+      const x = c.getContext('2d');
+      x.drawImage(img, 0, 0, 12, 12);
+      const d = x.getImageData(0, 0, 12, 12).data;
+      let min = 255, max = 0;
+      for (let i = 0; i < d.length; i += 4) { const v = (d[i] + d[i + 1] + d[i + 2]) / 3; if (v < min) min = v; if (v > max) max = v; }
+      return max - min < 6;
+    } catch (e) { return false; }
+  }
+
   function loadImage(src, ms = 15000) {
     return new Promise((resolve, reject) => {
       const img = new Image();
       img.decoding = 'async';
+      const remote = /^https?:/.test(src);
+      if (remote) img.crossOrigin = 'anonymous';
       const t = setTimeout(() => { img.src = ''; reject(new Error('timeout')); }, ms);
-      img.onload = () => { clearTimeout(t); resolve(img); };
+      img.onload = () => {
+        clearTimeout(t);
+        if (!img.naturalWidth || (remote && looksBlank(img))) reject(new Error('prázdný obrázek'));
+        else resolve(img);
+      };
       img.onerror = () => { clearTimeout(t); reject(new Error('img error')); };
       img.src = src;
     });
+  }
+
+  /** Načte fotku položky; u Wikimedie zkusí při chybě menší náhled */
+  async function loadItemImage(src, ms) {
+    try { return await loadImage(src, ms); } catch (e) {
+      if (/\/960px-/.test(src)) return loadImage(src.replace('/960px-', '/500px-'), ms);
+      throw e;
+    }
   }
 
   function photoItem(p) {
@@ -465,7 +494,7 @@
         const it = await withTimeout(Online.randomAnimal(groups, exclude, place), 12000);
         if (it) {
           const [img, detail] = await Promise.all([
-            loadImage(it.img, 12000),
+            loadItemImage(it.img, 12000).catch(() => loadImage(it.thumb, 10000)),
             withTimeout(Online.animalDetail(it.inat), 8000).catch(() => null),
           ]);
           return { item: it, img, detail };
@@ -477,7 +506,7 @@
     for (let i = 0; i < 4; i++) {
       const it = pickOffline(local, used);
       try {
-        const img = await loadImage(it.img);
+        const img = await loadItemImage(it.img);
         return { item: it, img, detail: null };
       } catch (e) { used.add(it.id); }
     }
@@ -565,12 +594,12 @@
     game.next = prepareItem(game.s, game.used, forced).catch(e => e);
   }
 
-  async function nextTurn() {
+  async function nextTurn(skipped) {
     if (!game) return;
     if (game.turn >= game.total) { endGame(); return; }
     const player = game.duel ? null : game.players[game.turn % game.players.length];
 
-    if (game.players.length > 1 && !game.duel) {
+    if (game.players.length > 1 && !game.duel && !skipped) {
       const pi = game.turn % game.players.length;
       $('#turnName').textContent = player.name;
       $('#turnAvatar').textContent = player.name.charAt(0).toUpperCase();
@@ -632,7 +661,9 @@
     const mode = game.daily ? game.daily.mode : game.s.mode;
     const st = Distort.createState(mode, game.s.diff, seed);
     st.ease = game.photos ? true : game.s.ease;
-    if (item.photo) { st.cx = item.cx; st.cy = item.cy; }
+    // u vlastní fotky s ručně vybraným bodem přiblížení ho použít, jinak najít místo s nejvíc detaily
+    if (item.photo && !(item.cx === 0.5 && item.cy === 0.5)) { st.cx = item.cx; st.cy = item.cy; }
+    else Distort.focusDetail(img, st);
     const choice = !game.photos && game.s.answer === 'choice';
     round = {
       item, img, detail, player, st,
@@ -858,6 +889,18 @@
   }
 
   $('#btnGiveUp').addEventListener('click', () => { if (round && !round.done) finishRound(false); });
+
+  /** Jiný obrázek – když se fotka nenačte nebo je nepoužitelná. Kolo se nepočítá. */
+  $('#btnSkip').addEventListener('click', () => {
+    if (!game || (round && round.done)) return;
+    if (round) round.done = true;
+    cancelAnimationFrame(rafId);
+    clearInterval(timerId);
+    if (game.photos && game.total > game.turn + 1) game.total--; // fotka se přeskočí, kol bude o jedno méně
+    else if (game.photos) { endGame(); return; }
+    toast('Kolo se nepočítá, dávám jiný obrázek.', 2000, null, 'dices');
+    nextTurn(true);
+  });
 
   // vlastní fotky: postupné odkrývání a odhalení
   const PHOTO_POINTS = [100, 70, 45, 25, 10];
@@ -1390,20 +1433,25 @@
     };
     update();
     if (!missing.length || !Online.isOnline()) return;
-    const queue = missing.slice();
-    const worker = async () => {
-      while (queue.length) {
-        const u = queue.shift();
-        try {
-          const sameOrigin = new URL(u).origin === location.origin;
-          await cache.add(new Request(u, { mode: sameOrigin ? 'same-origin' : 'cors', credentials: 'omit' }));
-          missing = missing.filter(x => x !== u);
-          readyRemote.add(u);
-          update();
-        } catch (e) { /* zkusí příště */ }
+    const local = missing.filter(u => new URL(u).origin === location.origin);
+    const remote = missing.filter(u => new URL(u).origin !== location.origin);
+    const add = async (u, sameOrigin) => {
+      await cache.add(new Request(u, { mode: sameOrigin ? 'same-origin' : 'cors', credentials: 'omit' }));
+      missing = missing.filter(x => x !== u);
+      readyRemote.add(u);
+      update();
+    };
+    const localWorker = async () => { while (local.length) { const u = local.shift(); try { await add(u, true); } catch (e) { /* příště */ } } };
+    // fotky z Wikimedie po jedné a s pauzou, ať server nezačne odmítat; po opakovaném odmítnutí to zkusí při dalším spuštění
+    const remoteWorker = async () => {
+      let fails = 0;
+      while (remote.length && fails < 4) {
+        const u = remote.shift();
+        try { await add(u, false); fails = 0; } catch (e) { fails++; await sleep(2500 * fails); }
+        await sleep(350);
       }
     };
-    await Promise.all([worker(), worker(), worker()]);
+    await Promise.all([localWorker(), localWorker(), localWorker(), remoteWorker()]);
     update();
   }
 

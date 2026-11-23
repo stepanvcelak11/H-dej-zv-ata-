@@ -21,7 +21,7 @@
     Insecta: 'hmyz', Arachnida: 'pavoukovec', Mollusca: 'měkkýš',
   };
 
-  const LS_POOL = 'hz.onlinePool.v1';
+  const LS_POOL = 'hz.onlinePool.v2';
   const LS_DETAIL = 'hz.onlineDetail.v1';
 
   function lsGet(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } }
@@ -84,7 +84,7 @@
       `&taxon_id=${cls.id}&photos=true&is_active=true&page=${page}` + (place ? `&place_id=${place}` : '');
     const d = await getJSON(url, 12000);
     const items = d.results
-      .filter(t => t.preferred_common_name && t.default_photo && OK_LIC.has(t.default_photo.license_code) && !t.extinct)
+      .filter(t => t.preferred_common_name && t.default_photo && OK_LIC.has(t.default_photo.license_code) && !t.extinct && !/^Homo\b/.test(t.name))
       .map(t => toItem(t, cls.group));
     pool[key] = { at: Date.now(), items };
     // drží jen pár stránek, ať nezabírá moc místa
